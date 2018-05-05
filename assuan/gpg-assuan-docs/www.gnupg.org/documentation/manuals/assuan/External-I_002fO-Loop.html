@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: External I/O Loop</title>
+
+<meta name="description" content="Developing with Assuan: External I/O Loop">
+<meta name="keywords" content="Developing with Assuan: External I/O Loop">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="External-I_002fO-Loop-Client.html#External-I_002fO-Loop-Client" rel="next" title="External I/O Loop Client">
+<link href="Server-code.html#Server-code" rel="prev" title="Server code">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="External-I_002fO-Loop"></a>
+<div class="header">
+<p>
+Next: <a href="Utilities.html#Utilities" accesskey="n" rel="next">Utilities</a>, Previous: <a href="Server-code.html#Server-code" accesskey="p" rel="prev">Server code</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-to-use-external-I_002fO-event-loops"></a>
+<h2 class="chapter">8 How to use external I/O event loops</h2>
+
+<p>The above implementations of an Assuan client and server are
+synchronous, insofar as the main routines block until a request or
+client connection is completely processed.  In some programs, for
+example GUI applications, this is undesirable.  Instead, Assuan
+operations should be non-blocking, and the caller should be able to
+poll all involved file descriptors to determine when the next Assuan
+function can be invoked without blocking.
+</p>
+<p>To make this possible, client and server have to adhere to some rules:
+</p><ul>
+<li> Either partner should always write full lines.  If partial lines are
+written, the remainder of the line should be sent without delay.
+</li><li> Either partner should eagerly receive status messages.  While
+receiving and sending bulk data may be delayed, the status
+communication channel is different: Both partners may send status
+messages in blocking mode at any time the protocol allows them to send
+such status messages.  To ensure that these send operations do not
+actually block the sender, the recipient must be ready to receive
+without undue delay.
+</li><li> If descriptor passing is used over a socket, the descriptor must be
+sent after the corresponding command without undue delay.
+</li></ul>
+
+<p>Together, these restrictions allow to limit the need for asynchronous
+I/O operations to bulk data and the inbound status file descriptor.
+</p>
+<p>In addition to the above rules, client and server should adhere to the
+following implementation guidelines.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="External-I_002fO-Loop-Client.html#External-I_002fO-Loop-Client" accesskey="1">External I/O Loop Client</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">External I/O event loops in the client.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="External-I_002fO-Loop-Server.html#External-I_002fO-Loop-Server" accesskey="2">External I/O Loop Server</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">External I/O event loops in the server.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Utilities.html#Utilities" accesskey="n" rel="next">Utilities</a>, Previous: <a href="Server-code.html#Server-code" accesskey="p" rel="prev">Server code</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

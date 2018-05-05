@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Building sources</title>
+
+<meta name="description" content="Developing with Assuan: Building sources">
+<meta name="keywords" content="Developing with Assuan: Building sources">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Preparation.html#Preparation" rel="up" title="Preparation">
+<link href="Automake.html#Automake" rel="next" title="Automake">
+<link href="Header.html#Header" rel="prev" title="Header">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Building-sources"></a>
+<div class="header">
+<p>
+Next: <a href="Automake.html#Automake" accesskey="n" rel="next">Automake</a>, Previous: <a href="Header.html#Header" accesskey="p" rel="prev">Header</a>, Up: <a href="Preparation.html#Preparation" accesskey="u" rel="up">Preparation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Building-sources-1"></a>
+<h3 class="section">4.2 Building sources</h3>
+
+<p>If you want to compile a source file including the <samp>assuan.h</samp>
+header file, you must make sure that the compiler can find it in the
+directory hierarchy.  This is accomplished by adding the path to the
+directory in which the header file is located to the compilers include
+file search path (via the <samp>-I</samp> option).
+</p>
+<p>However, the path to the include file is determined at the time the
+source is configured.  To solve this problem, <code>libassuan</code> ships with
+a small helper program <code>libassuan-config</code> that knows the path to
+the include file and other configuration options.  The options that need
+to be added to the compiler invocation at compile time are output by the
+<samp>--cflags</samp> option to <code>libassuan-config</code>.  The following
+example shows how it can be used at the command line:
+</p>
+<div class="example">
+<pre class="example">gcc -c foo.c $(libassuan-config --cflags)
+</pre></div>
+
+<p>Adding the output of &lsquo;<samp>libassuan-config --cflags</samp>&rsquo; to the compiler&rsquo;s
+command line will ensure that the compiler can find the <samp>assuan.h</samp>
+header file.
+</p>
+<p>A similar problem occurs when linking the program with the library.
+Again, the compiler/linker has to find the library files.  For this to
+work, the path to the library files has to be added to the library
+search path (via the <samp>-L</samp> option).  For this, the option
+<samp>--libs</samp> to <code>libassuan-config</code> can be used.  For
+convenience, this option also outputs all other options that are
+required to link the program with the <code>libassuan</code> libraries (in
+particular, the <samp>-lassuan</samp> option).  The example shows how to
+link <samp>foo.o</samp> with the <code>libassuan</code> library to a program
+<code>foo</code>.
+</p>
+<div class="example">
+<pre class="example">gcc -o foo foo.o $(libassuan-config --libs)
+</pre></div>
+
+<p>You can also combine both examples to a single command by specifying
+both options to <code>libassuan-config</code>:
+</p>
+<div class="example">
+<pre class="example">gcc -o foo foo.c $(libassuan-config --cflags --libs)
+</pre></div>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Automake.html#Automake" accesskey="n" rel="next">Automake</a>, Previous: <a href="Header.html#Header" accesskey="p" rel="prev">Header</a>, Up: <a href="Preparation.html#Preparation" accesskey="u" rel="up">Preparation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

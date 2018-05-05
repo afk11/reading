@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Utilities</title>
+
+<meta name="description" content="Developing with Assuan: Utilities">
+<meta name="keywords" content="Developing with Assuan: Utilities">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Socket-wrappers.html#Socket-wrappers" rel="next" title="Socket wrappers">
+<link href="External-I_002fO-Loop-Server.html#External-I_002fO-Loop-Server" rel="prev" title="External I/O Loop Server">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Utilities"></a>
+<div class="header">
+<p>
+Next: <a href="Socket-wrappers.html#Socket-wrappers" accesskey="n" rel="next">Socket wrappers</a>, Previous: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="p" rel="prev">External I/O Loop</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Utility-functions"></a>
+<h2 class="chapter">9 Utility functions</h2>
+
+<p>There are a lot of helper functions to make writing Assuan code easier.
+Some of these functions provide information not available with the
+general functions.
+</p>
+
+<dl>
+<dt><a name="index-assuan_005fwrite_005fstatus"></a>Function: <em>gpg_error_t</em> <strong>assuan_write_status</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>keyword</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>text</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This is a convenience function for a server to send a status line.  You
+need to pass it the <var>keyword</var> and the content of the status line in
+<var>text</var>.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005finquire"></a>Function: <em>gpg_error_t</em> <strong>assuan_inquire</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>keyword</var><!-- /@w -->, unsigned&nbsp;char&nbsp;**<var><span class="nolinebreak">r_buffer</span></var><!-- /@w -->, <span class="nolinebreak">size_t</span>&nbsp;*<var><span class="nolinebreak">r_length</span></var><!-- /@w -->, <span class="nolinebreak">size_t</span>&nbsp;<var>maxlen</var><!-- /@w -->)</em></dt>
+<dd>
+<p>A server may use this function to request specific data from a client.
+This function sends an &rsquo;INQUIRE&rsquo; command back to the client and
+returns the client&rsquo;s response in a newly allocated buffer.  You need
+to pass at least the server&rsquo;s context (<var>ctx</var>) and a description of
+the required data (<var>keyword</var>).  All other parameters may be
+<code>NULL</code> or <code>0</code>, but this is rarely useful.
+</p>
+<p>On success the result is stored in a newly allocated buffer stored at
+<var>r_buffer</var>. The length of the data is stored at <var>r_length</var>.
+If <var>maxlen</var> has not been given as <code>0</code>, it specifies an upper
+size limit of the expected data.  If the client returns too much
+data the function fails and an error with the error code
+<code>GPG_ERR_ASS_TOO_MUCH_DATA</code> will be returned.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fget_005fdata_005ffp"></a>Function: <em>FILE*</em> <strong>assuan_get_data_fp</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Return a stdio stream for the Assuan context <var>ctx</var>.  This stream may
+then be used for data output (assuan_write_data).  The stream is valid
+until the end of the current handler.  Calling <code>fclose</code> for that stream is
+not required.  Assuan does all the buffering needed to insert the status
+line as well as the required line wrapping and quoting for data lines.
+</p>
+<p>This function is only available on systems supporting either
+<code>funopen</code> or <code>fopencookie</code>. If it is not supported <code>NULL</code>
+is returned and <code>errno</code> is set to <code>ENOSYS</code>.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fset_005fokay_005fline"></a>Function: <em>gpg_error_t</em> <strong>assuan_set_okay_line</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>line</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Set the text used for the next <code>OK</code> response to <var>line</var>.  This is
+sometimes useful to send additional human readable information along
+with the OK line.  The string is automatically reset at the end of the
+current handler.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fcommand_005fparse_005ffd"></a>Function: <em>gpg_error_t</em> <strong>assuan_command_parse_fd</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, char&nbsp;*<var>line</var><!-- /@w -->, <span class="nolinebreak">assuan_fd_t</span>&nbsp;*<var>rfd</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This is the core of the default <code>INPUT</code> and <code>OUTPUT</code>
+handler.  It may be used in custom commands as well to negotiate a
+file descriptor.  If <var>line</var> contains <code>FD=<var>n</var></code>, it returns
+<var>n</var> in <var>rfd</var> assuming a local file descriptor.  If <var>line</var>
+contains just <code>FD</code> it returns a file descriptor at <var>rfd</var>;
+this file descriptor needs to have been sent by the client right
+before using <code>assuan_sendfd</code>.
+</p>
+<p>On W32 systems the returned file descriptor is a system handle and not a
+libc low level I/O file descriptor.  Thus applications need to use
+<code>_open_osfhandle</code> before they can pass this descriptor to standard
+functions like <code>fdopen</code> or <code>dup</code>.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fget_005fcommand_005fname"></a>Function: <em>const&nbsp;char&nbsp;*<!-- /@w --></em> <strong>assuan_get_command_name</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Return the name of the command currently processed by a handler.
+The returned string is valid until the next call to an Assuan
+function on the same context.  Returns <code>NULL</code> if no handler is
+executed or the command is not known.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fget_005finput_005ffd"></a>Function: <em>assuan_fd_t</em> <strong>assuan_get_input_fd</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Return the file descriptor sent by the client using the last <code>INPUT</code>
+command.  Returns <code>ASSUAN_INVALID_FD</code> if no file descriptor is available.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fget_005foutput_005ffd"></a>Function: <em>assuan_fd_t</em> <strong>assuan_get_output_fd</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Return the file descriptor sent by the client using the last
+<code>OUTPUT</code> command.  Returns <code>ASSUAN_INVALID_FD</code> if no file descriptor is
+available.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fclose_005finput_005ffd"></a>Function: <em>gpg_error_t</em> <strong>assuan_close_input_fd</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Close the file descriptor set by the last <code>INPUT</code> command.  This
+function has the advantage over a simple <code>close</code> that it can do
+some sanity checks and make sure that a following
+<code>assuan_get_input_fd</code> won&rsquo;t return an already closed descriptor.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fclose_005foutput_005ffd"></a>Function: <em>gpg_error_t</em> <strong>assuan_close_output_fd</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Close the file descriptor set by the last <code>OUTPUT</code> command.  This
+function has the advantage over a simple <code>close</code> that it can do
+some sanity checks and make sure that a following
+<code>assuan_get_input_fd</code> won&rsquo;t return an already closed descriptor.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fset_005ferror"></a>Function: <em>gpg_error_t</em> <strong>assuan_set_error</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;<var>err</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>text</var><!-- /@w -->)</em></dt>
+<dd><p>This is a helper to provide a more descriptive error text with <code>ERR</code>
+lines.  For this to work, the text needs to be stored in the context
+<var>ctx</var> while still being in the command handler.  This function is
+commonly called this way
+</p><div class="smallexample">
+<pre class="smallexample">  return assuan_set_error (ctx, err, &quot;commands needs 5 arguments&quot;);
+</pre></div>
+<p>The value <var>err</var> is passed through and thus the return value of the
+command handler in the example.  The provided text further explains
+that error to humans.
+</p></dd></dl>
+
+
+
+<dl>
+<dt><a name="index-assuan_005fget_005fpid"></a>Function: <em>pid_t</em> <strong>assuan_get_pid</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This function returns the pid of the connected connected peer.  If
+that pid is not known <code>ASSUAN_INVALID_PID</code> is returned.  Note
+that it is not always possible to learn the pid of the other
+process. For a pipe based server the client knows it instantly and a
+mechanism is in place to let the server learn it.  For socket based
+servers the pid is only available on systems providing the
+<code>SO_PEERCRED</code> socket option <a name="DOCF1" href="#FOOT1"><sup>1</sup></a>.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fpeercred_005ft"></a>Data type: <strong>assuan_peercred_t</strong></dt>
+<dd><p>This structure is used to store the peer credentials.  The available
+members depend on the operating system.
+</p>
+<dl compact="compact">
+<dt><code>pid_t pid</code></dt>
+<dd><p>The process ID of the peer.
+</p>
+</dd>
+<dt><code>uid_t uid</code></dt>
+<dd><p>The user ID of the peer process.
+</p>
+</dd>
+<dt><code>gid_t gid</code></dt>
+<dd><p>The group ID of the peer process.
+</p></dd>
+</dl>
+</dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fget_005fpeercred"></a>Function: <em>gpg_error_t</em> <strong>assuan_get_peercred</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_peercred_t</span>&nbsp;*<var>peercred</var><!-- /@w -->)</em></dt>
+<dd><p>Return user credentials of the peer. This will work only on certain
+systems and only when connected over a socket.  On success, a pointer
+to the peer credentials is stored in <var>peercred</var>.  The information
+is only valid as long as the state of the connection is unchanged (at
+least until the next assuan call to the same context).
+</p>
+<p>As of now only the server is able to retrieve this information.  Note,
+that for getting the pid of the peer <code>assuan_get_pid</code> is usually
+better suited.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fget_005factive_005ffds"></a>Function: <em>int</em> <strong>assuan_get_active_fds</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, int&nbsp;<var>what</var><!-- /@w -->, <span class="nolinebreak">assuan_fd_t</span>&nbsp;*<var>fdarray</var><!-- /@w -->, int&nbsp;<var>fdarraysize</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Return all active file descriptors for the context <var>ctx</var>.  This
+function can be used to select on the file descriptors and to call
+<code>assuan_process_next</code> if there is an active one.  The first
+descriptor in the array is the one used for the command connection.
+Currently <var>what</var> needs to be <code>0</code> to return descriptors used for
+reading, <code>1</code> will eventually be used to return descriptors used for
+writing.  <var>fdarray</var> is an array of integers provided by the caller;
+<var>fdarraysize</var> gives the size of that array.
+</p>
+<p>On success the number of active descriptors are returned.  These active
+descriptors are then stored in <var>fdarray</var>.  On error <code>-1</code> is
+returned; the most likely reason for this is a too small <var>fdarray</var>.
+</p>
+<p>Note that on W32 systems the returned file descriptor is a system handle
+and not a libc low level I/O file descriptor.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fpending_005fline"></a>Function: <em>int</em> <strong>assuan_pending_line</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd><p>A call to this function return true if a full line has been buffered and
+thus an entire assuan line may be read without triggering any actual
+I/O.
+</p></dd></dl>
+
+
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT1" href="#DOCF1">(1)</a></h3>
+<p>to our knowledge only the
+Linux kernel has this feature</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Socket-wrappers.html#Socket-wrappers" accesskey="n" rel="next">Socket wrappers</a>, Previous: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="p" rel="prev">External I/O Loop</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

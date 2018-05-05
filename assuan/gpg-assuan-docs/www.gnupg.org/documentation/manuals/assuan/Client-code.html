@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Client code</title>
+
+<meta name="description" content="Developing with Assuan: Client code">
+<meta name="keywords" content="Developing with Assuan: Client code">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Server-code.html#Server-code" rel="next" title="Server code">
+<link href="Reading-and-Writing.html#Reading-and-Writing" rel="prev" title="Reading and Writing">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Client-code"></a>
+<div class="header">
+<p>
+Next: <a href="Server-code.html#Server-code" accesskey="n" rel="next">Server code</a>, Previous: <a href="Generalities.html#Generalities" accesskey="p" rel="prev">Generalities</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-to-develop-an-Assuan-client"></a>
+<h2 class="chapter">6 How to develop an Assuan client</h2>
+
+<p>Depending on the type of the server you want to connect you need to use
+different functions.
+</p>
+<p>If the peer is not a simple pipe server but one using full-duplex
+sockets, the full-fledged variant of the above function should be
+used:
+</p>
+<dl>
+<dt><a name="index-assuan_005fpipe_005fconnect"></a>Function: <em>gpg_error_t</em> <strong>assuan_pipe_connect</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->,const&nbsp;char&nbsp;*<var>name</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>argv</var>[]<!-- /@w -->, <span class="nolinebreak">assuan_fd_t</span>&nbsp;*<var><span class="nolinebreak">fd_child_list</span></var><!-- /@w -->, void&nbsp;(*<var>atfork</var>)&nbsp;(void&nbsp;*,&nbsp;int)<!-- /@w -->, void&nbsp;*<var>atforkvalue</var><!-- /@w -->, unsigned&nbsp;int&nbsp;<var>flags</var><!-- /@w -->)</em></dt>
+<dd>
+<p>A call to this functions forks the current process and executes the
+program <var>name</var>, passing the arguments given in the NULL-terminated
+list <var>argv</var>.  A list of file descriptors not to be closed may be
+given using the <code>ASSUAN_INVALID_FD</code> terminated array <var>fd_child_list</var>.
+</p>
+<p>If <var>name</var> is a null pointer, only a fork but no exec is done.  Thus
+the child continues to run.  However all file descriptors are closed and
+some special environment variables are set.  To let the caller detect
+whether the child or the parent continues, the parent returns with
+<code>&quot;client&quot;</code> returned in <var>argv</var> and the child returns with
+<code>&quot;server&quot;</code> in <var>argv</var>.  This feature is only available on POSIX
+platforms.
+</p>
+<p>If <var>atfork</var> is not NULL, this function is called in the child right
+after the fork and the value <var>atforkvalue</var> is passed as the first
+argument.  That function should only act if the second argument it
+received is <code>0</code>.  Such a fork callback is useful to release
+additional resources not to be used by the child.
+</p>
+<p><var>flags</var> is a bit vector and controls how the function acts:
+</p>
+<dl compact="compact">
+<dt><code>ASSUAN_PIPE_CONNECT_FDPASSING</code></dt>
+<dd><p>If cleared a simple pipe based server is expected.  If set a server
+based on full-duplex pipes is expected.  Such pipes are usually
+created using the <code>socketpair</code> function.  It also enables
+features only available with such servers.
+</p>
+</dd>
+<dt><code>ASSUAN_PIPE_CONNECT_DETACHED</code></dt>
+<dd><p>If set and there is a need to start the server it will be started as a
+background process.  This flag is useful under W32 systems, so that no
+new console is created and pops up a console window when starting the
+server.  On W32CE systems this flag is ignored.
+</p></dd>
+</dl>
+</dd></dl>
+
+
+<p>If you are using a long running server listening either on a TCP or a
+Unix domain socket, the following function is used to connect to the server:
+</p>
+<dl>
+<dt><a name="index-assuan_005fsocket_005fconnect"></a>Function: <em>gpg_error_t</em> <strong>assuan_socket_connect</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>name</var><!-- /@w -->, <span class="nolinebreak">pid_t</span>&nbsp;<var><span class="nolinebreak">server_pid</span></var><!-- /@w -->, unsigned&nbsp;int&nbsp;<var>flags</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Make a connection to the Unix domain socket <var>name</var> using the
+already-initialized Assuan context at <var>ctx</var>.  <var>server_pid</var> is
+currently not used but may become handy in the future; if you don&rsquo;t
+know the server&rsquo;s process ID (PID), pass <code>ASSUAN_INVALID_PID</code>.
+With <var>flags</var> set to <code>ASSUAN_SOCKET_CONNECT_FDPASSING</code>,
+<code>sendmsg</code> and <code>recvmesg</code> are used for input and output and
+thereby enable the use of descriptor passing.
+</p>
+<p>Connecting to a TCP server is not yet implemented.  Standard URL
+schemes are reserved for <var>name</var> specifying a TCP server.
+</p></dd></dl>
+
+<p>Now that we have a connection to the server, all work may be
+conveniently done using a couple of callbacks and the transact
+function:
+</p>
+<dl>
+<dt><a name="index-assuan_005ftransact"></a>Function: <em>gpg_error_t</em> <strong>assuan_transact</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>command</var><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;(*<var><span class="nolinebreak">data_cb</span></var>)(void&nbsp;*,&nbsp;const&nbsp;void&nbsp;*,&nbsp;<span class="nolinebreak">size_t)</span><!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">data_cb_arg</span></var><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;(*<var><span class="nolinebreak">inquire_cb</span></var>)(void*,&nbsp;const&nbsp;char&nbsp;*)<!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">inquire_cb_arg</span></var><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;(*<var><span class="nolinebreak">status_cb</span></var>)(void*,&nbsp;const&nbsp;char&nbsp;*)<!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">status_cb_arg</span></var><!-- /@w -->)</em></dt>
+<dd>
+<p>Here <var>ctx</var> is the Assuan context opened by one of the connect
+calls.  <var>command</var> is the actual Assuan command string.  It
+shall not end with a line feed and its length is limited to
+<code>ASSUAN_LINELENGTH</code> (~1000 bytes)
+</p>
+<p><var>data_cb</var> is called by Libassuan for data lines; <var>data_cb_arg</var>
+is passed to it along with the data and the length.  [FIXME: needs
+more documentation].
+</p>
+<p><var>inquire_cb</var> is called by Libassuan when the server requests
+additional information from the client while processing the command.
+This callback shall check the provided inquiry name and send the data
+as requested back using the <code>assuan_send_data</code>.  The server
+passed <var>inquiry_cb_arg</var> along with the inquiry name to the
+callback.
+</p>
+<p><var>status_cb</var> is called by Libassuan for each status line it receives
+from the server.  <var>status_cb_arg</var> is passed along with the status
+line to the callback.
+</p>
+<p>The function returns <code>0</code> success or an error value.  The error value
+may be the one one returned by the server in error lines or one
+generated by the callback functions.
+</p></dd></dl>
+
+<p>Libassuan supports descriptor passing on some platforms.  The next two
+functions are used with this feature:
+</p>
+<a name="function-assuan_005fsendfd"></a><dl>
+<dt><a name="index-assuan_005fsendfd"></a>Function: <em>gpg_error_t</em> <strong>assuan_sendfd</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>fd</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Send the descriptor <var>fd</var> to the peer using the context <var>ctx</var>.
+The descriptor must be sent before the command is issued that makes
+use of the descriptor.
+</p>
+<p>Note that calling this function with a <var>ctx</var> of <code>NULL</code> and
+<var>fd</var> of <code>ASSUAN_INVALID_FD</code> can be used as a runtime test to
+check whether descriptor passing is available on the platform:
+<code>0</code> is returned if descriptor passing is available, otherwise an
+error with the error code <code>GPG_ERR_NOT_IMPLEMENTED</code> is returned.
+</p></dd></dl>
+
+<a name="function-assuan_005freceivefd"></a><dl>
+<dt><a name="index-assuan_005freceivefd"></a>Function: <em>gpg_error_t</em> <strong>assuan_receivefd</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_fd_t</span>&nbsp;*<var>fd</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Receive a descriptor pending for the context <var>ctx</var> from the peer.
+The descriptor must be pending before this function is called.  To
+accomplish this, the peer needs to use <code>assuan_sendfd</code> before the
+trigger is sent (e.g. using <code>assuan_write_line (&quot;INPUT FD&quot;)</code>.
+</p></dd></dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Server-code.html#Server-code" accesskey="n" rel="next">Server code</a>, Previous: <a href="Generalities.html#Generalities" accesskey="p" rel="prev">Generalities</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

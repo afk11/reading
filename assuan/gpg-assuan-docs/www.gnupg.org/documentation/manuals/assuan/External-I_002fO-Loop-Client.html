@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: External I/O Loop Client</title>
+
+<meta name="description" content="Developing with Assuan: External I/O Loop Client">
+<meta name="keywords" content="Developing with Assuan: External I/O Loop Client">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="External-I_002fO-Loop.html#External-I_002fO-Loop" rel="up" title="External I/O Loop">
+<link href="External-I_002fO-Loop-Server.html#External-I_002fO-Loop-Server" rel="next" title="External I/O Loop Server">
+<link href="External-I_002fO-Loop.html#External-I_002fO-Loop" rel="prev" title="External I/O Loop">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="External-I_002fO-Loop-Client"></a>
+<div class="header">
+<p>
+Next: <a href="External-I_002fO-Loop-Server.html#External-I_002fO-Loop-Server" accesskey="n" rel="next">External I/O Loop Server</a>, Up: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="u" rel="up">External I/O Loop</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="External-I_002fO-event-loops-in-the-client_002e"></a>
+<h3 class="section">8.1 External I/O event loops in the client.</h3>
+
+<p>The reference implementation for using external I/O event loops in the
+client is the GPGME library, which exports its own external I/O event
+loop mechanism and utilizes the Assuan library transparently for the
+user.  The following steps document how GPGME achieves this.
+</p>
+<ol>
+<li> Before connecting, set up pipes for bulk data transfer (using the
+INPUT/OUTPUT commands, for example).  These are passed to the server
+either by inheritance (using a pipe server) or by FD passing (using a
+socket server).
+
+</li><li> Then you need to connect to the server.  GPGME uses a pipe server, so
+it just spawns a server process, which is a non-blocking operation.
+FIXME: Currently, using a client with external event loop over a
+socket connection is not supported.  It is easy to support (we just
+need a variation of <code>assuan_socket_connect</code> which takes an
+already connected socket FD and turns it into an Assuan context), so
+if you need this let us know.
+
+</li><li> After connecting, get the inbound status FD with
+<code>assuan_get_active_fds</code> (the first one returned is the status
+FD).  This FD can be duplicated if it is convenient (GPGME does this
+to be able to close this FD and associated callback handlers without
+disrupting Assuan&rsquo;s internals).
+
+</li><li> Then register the Assuan inbound status FD and all bulk data FDs with
+the I/O event mechanism.  In general, this requires setting up
+callback handlers for these FDs and registering them with the main
+event loop.
+
+</li><li> When bulk data FDs become ready, you can simply perform the
+corresponding read or write operations.  When the inbound status FD
+becomes ready, you can receive the next server line with
+assuan_read_line().
+
+</li><li> You should close and unregister the bulk data FDs when you wrote all
+data (for outbound FDs) or receive an EOF (for inbound FDs).  When you
+receive an ERR from the server, or an OK for the final operation, you
+can unregister the inbound status FD and call <code>assuan_release</code>.
+
+</li><li> As noted above, all send operations on the outbound status FD are done
+immediate with blocking.  In GPGME, this has never caused any problems.
+
+</li><li> The <code>INQUIRE</code> function can be handled in two ways: If the
+requested data is immediately available, the client can just send the
+data blockingly.  If the requested data needs to be fetched from a
+blocking source, a callback handler can be registered for the FD with
+the main event loop.  GPGME does not support the <code>INQUIRE</code>
+function, so we do not have any practical experience with this.
+</li></ol>
+
+<p>Currently, the client can not cancel a pending operation gracefully.
+It can, however, disconnect from the server at any time.  It is the
+responsibility of the server to periodically send status messages to
+the client to probe if the connection remains alive.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="External-I_002fO-Loop-Server.html#External-I_002fO-Loop-Server" accesskey="n" rel="next">External I/O Loop Server</a>, Up: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="u" rel="up">External I/O Loop</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

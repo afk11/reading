@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Socket wrappers</title>
+
+<meta name="description" content="Developing with Assuan: Socket wrappers">
+<meta name="keywords" content="Developing with Assuan: Socket wrappers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Library-Copying.html#Library-Copying" rel="next" title="Library Copying">
+<link href="Utilities.html#Utilities" rel="prev" title="Utilities">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Socket-wrappers"></a>
+<div class="header">
+<p>
+Next: <a href="Library-Copying.html#Library-Copying" accesskey="n" rel="next">Library Copying</a>, Previous: <a href="Utilities.html#Utilities" accesskey="p" rel="prev">Utilities</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Socket-wrapper-functions"></a>
+<h2 class="chapter">10 Socket wrapper functions</h2>
+
+<p>It is sometimes useful to support Unix domain sockets on Windows.  To do
+this in a portable way, Assuan provides a set of wrapper functions which
+may be used on any system but will enhance Windows to support these
+socket types.  The actual implementation is based on local TCP sockets
+and fully transparent for the client.  Server code needs to utilize two
+extra functions to check the permissions.
+</p>
+<dl>
+<dt><a name="index-assuan_005fsock_005finit"></a>Function: <em>gpg_error_t</em> <strong>assuan_sock_init</strong> <em>(void)</em></dt>
+<dd><p>Initialize the socket wrappers.  Must be called once at startup if any
+of the socket wrapper functions are used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fdeinit"></a>Function: <em>gpg_error_t</em> <strong>assuan_sock_deinit</strong> <em>(void)</em></dt>
+<dd><p>Deinitialize the socket wrappers.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fclose"></a>Function: <em>int</em> <strong>assuan_sock_close</strong> <em>(<span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>fd</var><!-- /@w -->)</em></dt>
+<dd><p>Wrapper for close which does a closesocket on Windows if needed.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fnew"></a>Function: <em>assuan_fd_t</em> <strong>assuan_sock_new</strong> <em>(int&nbsp;<var>domain</var><!-- /@w -->, int&nbsp;<var>type</var><!-- /@w -->, int&nbsp;<var>proto</var><!-- /@w -->);</em></dt>
+<dd><p>Wrapper around socket.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fconnect"></a>Function: <em>int</em> <strong>assuan_sock_connect</strong> <em>(<span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>sockfd</var><!-- /@w -->,          struct&nbsp;sockaddr&nbsp;*<var>addr</var><!-- /@w -->,          int&nbsp;<var>addrlen</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Wrapper around connect.  For Unix domain sockets under Windows this
+function also does a write immediately after the the connect to send the
+nonce as read from the socket&rsquo;s file.  Under Unix this function check
+whether the socket file is a redirection file and connects to the
+redirected socket instead; see <code>assuan_sock_set_sockaddr_un</code> for
+details on the redirection file format.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fconnect_005fbyname"></a>Function: <em>int</em> <strong>assuan_sock_connect_byname</strong> <em>(const&nbsp;char&nbsp;*&nbsp;<var>host</var><!-- /@w -->,          unsigned&nbsp;short&nbsp;<var>port</var><!-- /@w -->,          int&nbsp;<var>reserved</var><!-- /@w -->,          const&nbsp;char&nbsp;*<var>credentials</var><!-- /@w -->,          unsigned&nbsp;int&nbsp;<var>flags</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Directly connect to <var>port</var> on <var>host</var> given as a name.  The
+current implementation requires that <var>flags</var> has either
+<code>ASSUAN_SOCK_SOCKS</code> or <code>ASSUAN_SOCK_TOR</code> set.  On success a
+new TCP STREAM socket is returned; on error <code>ASSUAN_INVALID_FD</code>
+and ERRNO set.  If <var>credentials</var> is not <code>NULL</code>, it is a
+string used for password based SOCKS authentication.  Username and
+password are separated by a colon. <var>reserved</var> should be 0.  To
+test whether the proxy is available <var>host</var> and <var>port</var> may be
+given as NULL/0:  If the proxy is available the function returns a
+valid socket which is in the state after credentials sub-negotiation.
+The caller now knows that the SOCKS proxy is available and has been
+authenticated; normally the caller closes the socket then.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fbind"></a>Function: <em>int</em> <strong>assuan_sock_bind</strong> <em>(         <span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>sockfd</var><!-- /@w -->,         struct&nbsp;sockaddr&nbsp;*<var>addr</var><!-- /@w -->,         int&nbsp;<var>addrlen</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Wrapper around bind.  Under Windows this creates a file and writes the
+port number and a random nonce to this file.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fset_005fsockaddr_005fun"></a>Function: <em>int</em> <strong>assuan_sock_set_sockaddr_un</strong> <em>(         const&nbsp;char&nbsp;*<var>fname</var><!-- /@w -->,         struct&nbsp;sockaddr&nbsp;*<var>addr</var><!-- /@w -->,         int&nbsp;*<var><span class="nolinebreak">r_redirected</span></var><!-- /@w -->)</em></dt>
+<dd>
+<p>This is a helper function to initialize the Unix socket domain address
+structure <var>addr</var> and store the file name <var>fname</var> there.  If
+<var>r_redirected</var> is not NULL the function checks whether <var>fname</var>
+already exists, is a regular file, and not a socket.  In that case
+<var>fname</var> is read to see whether this is a redirection to a socket
+file.  If that is the case 1 is stored at <var>r_redirected</var>.  If the
+file does not look like a redirection file 0 will be stored there and
+<var>fname</var> will be used in the regular way.
+</p>
+<p>The format of a redirection file is
+</p>
+<div class="example">
+<pre class="example">%Assuan%
+socket=<var>name</var>
+</pre></div>
+
+<p>With <var>name</var> being is the actual socket to use.  No white spaces
+are allowed, both lines must be terminated by a single linefeed, and
+extra lines are not allowed.  Environment variables are interpreted in
+<var>name</var> if given in <code>${VAR}</code> notation.  No escape characters
+are defined; if the string <code>${</code> shall be used in file name, an
+environment variable with that content may be used.  The length of the
+redirection file is limited to 511 bytes which is more than sufficient
+for any known implementation of Unix domain sockets.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fget_005fnonce"></a>Function: <em>int</em> <strong>assuan_sock_get_nonce</strong> <em>(         struct&nbsp;sockaddr&nbsp;*<var>addr</var><!-- /@w -->,         int&nbsp;<var>addrlen</var><!-- /@w -->,         <span class="nolinebreak">assuan_sock_nonce_t</span>&nbsp;*<var>nonce</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This is used by the server after a bind to return the random nonce.  To
+keep the code readable this may also be used on POSIX system.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fcheck_005fnonce"></a>Function: <em>int</em> <strong>assuan_sock_check_nonce</strong> <em>(         <span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>fd</var><!-- /@w -->,         <span class="nolinebreak">assuan_sock_nonce_t</span>&nbsp;*<var>nonce</var><!-- /@w -->)</em></dt>
+<dd>
+<p>If the option <code>ASSUAN_SOCKET_SERVER_ACCEPTED</code> has been used,
+Libassuan has no way to check the nonce of the server.  Thus an explicit
+check of the saved nonce using this function is required.  If this
+function fails the server should immediately drop the connection.  This
+function may not be used if Libassuan does the accept call itself
+(i.e. <code>ASSUAN_SOCKET_SERVER_ACCEPTED</code> has not been used) because
+in this case Libassuan calls this function internally.  See also
+<code>assuan_set_sock_nonce</code>.
+</p>
+<p>Actually this mechanism is only required on Windows but for cleanness of
+code it may be used on POSIX systems as well, where this function is
+a nop.
+</p></dd></dl>
+
+<p>To control certain properties of the wrapper two additional functions
+are provided:
+</p>
+<dl>
+<dt><a name="index-assuan_005fsock_005fset_005fflag"></a>Function: <em>int</em> <strong>assuan_sock_set_flag</strong> <em>(                 <span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>fd</var><!-- /@w -->,                 const&nbsp;char&nbsp;*<var>name</var><!-- /@w -->,                 int&nbsp;<var>value</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Set the flags <var>name</var> for socket <var>fd</var> to <var>value</var>.  See
+below for a list of valid names.  Returns 0 on success; on failure
+sets ERRNO and returns -1.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fget_005fflag"></a>Function: <em>int</em> <strong>assuan_sock_get_flag</strong> <em>(                 <span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>fd</var><!-- /@w -->,                 const&nbsp;char&nbsp;*<var>name</var><!-- /@w -->,                 int&nbsp;*<var><span class="nolinebreak">r_value</span></var><!-- /@w -->)</em></dt>
+<dd>
+<p>Store the current value of the flag <var>name</var> for socket <var>fd</var> at
+<var>r_value</var>.  See below for a list of valid names.  Returns 0 on
+success; on failure sets ERRNO and returns -1.
+</p></dd></dl>
+
+<p>The supported flags are:
+</p>
+<dl compact="compact">
+<dt><code>cygwin</code></dt>
+<dd><p>This flag has an effect only on Windows.  If the value is 1, the
+socket is set into Cygwin mode so that Cygwin clients can connect to
+such a socket.  This flag needs to be set before a bind and should not
+be changed during the lifetime of the socket.  There is no need to set
+this flag for connecting to a Cygwin style socket because no state is
+required at the client.  On non-Windows platforms setting this flag is
+ignored, reading the flag always returns a value of 0.
+</p>
+</dd>
+<dt><code>tor-mode</code></dt>
+<dt><code>socks</code></dt>
+<dd><p>If <var>value</var> is 1 globally enable SOCKS5 mode for new connections
+using IPv6 or IPv4. <var>fd</var> must be set to <code>ASSUAN_INVALID_FD</code> A
+future extension may allow to disable SOCKS5 mode for a specified
+socket but globally disabling SOCKS5 mode is not possible.  Using the
+flag &ldquo;tor-mode&rdquo; expects the SOCKS5 proxy to listen on port 9050, the
+flag &ldquo;socks&rdquo; expects the proxy to listen on port 1080.
+</p>
+<p>Connections to the loopback address are not routed though the SOCKS
+proxy.  UDP requests are not supported at all.  The proxy will be
+connected at address 127.0.0.1; an IPv6 connection to the proxy is not
+yet supported.
+</p>
+</dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Library-Copying.html#Library-Copying" accesskey="n" rel="next">Library Copying</a>, Previous: <a href="Utilities.html#Utilities" accesskey="p" rel="prev">Utilities</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

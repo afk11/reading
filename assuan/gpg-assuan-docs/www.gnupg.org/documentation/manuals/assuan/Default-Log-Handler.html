@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Default Log Handler</title>
+
+<meta name="description" content="Developing with Assuan: Default Log Handler">
+<meta name="keywords" content="Developing with Assuan: Default Log Handler">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Generalities.html#Generalities" rel="up" title="Generalities">
+<link href="Contexts.html#Contexts" rel="next" title="Contexts">
+<link href="Initializing-the-library.html#Initializing-the-library" rel="prev" title="Initializing the library">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Default-Log-Handler"></a>
+<div class="header">
+<p>
+Next: <a href="Contexts.html#Contexts" accesskey="n" rel="next">Contexts</a>, Previous: <a href="Initializing-the-library.html#Initializing-the-library" accesskey="p" rel="prev">Initializing the library</a>, Up: <a href="Generalities.html#Generalities" accesskey="u" rel="up">Generalities</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Default-Log-Handler-1"></a>
+<h3 class="section">5.3 Default Log Handler</h3>
+
+<p>The default log handler can be configured by the following functions:
+</p>
+<dl>
+<dt><a name="index-assuan_005fset_005fassuan_005flog_005fprefix"></a>Function: <em>void</em> <strong>assuan_set_assuan_log_prefix</strong> <em>(const&nbsp;char&nbsp;*<var>text</var><!-- /@w -->)</em></dt>
+<dd><p>Set the prefix to be used at the start of a line emitted by assuan
+on the log stream to <var>text</var>.  The default is the empty string.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fget_005fassuan_005flog_005fprefix"></a>Function: <em>const&nbsp;char&nbsp;*<!-- /@w --></em> <strong>assuan_get_assuan_log_prefix</strong> <em>(void)</em></dt>
+<dd><p>Return the prefix to be used at the start of a line emitted by assuan
+on the log stream.  The default implementation returns the empty
+string.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fset_005fassuan_005flog_005fstream"></a>Function: <em>void</em> <strong>assuan_set_assuan_log_stream</strong> <em>(FILE *<var>fp</var>)</em></dt>
+<dd><p>This sets the default log stream to which <code>libassuan</code> should log messages not
+associated with a specific context to <var>fp</var>.  The default is to log
+to <code>stderr</code>.  This default value is also changed by using
+<code>assuan_set_log_stream</code> (to set a logging stream for a specific
+context) unless this function has been used.  Obviously this is not
+thread-safe and thus it is highly recommended to use this function to
+setup a proper default.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fget_005fassuan_005flog_005fstream"></a>Function: <em>FILE&nbsp;*<!-- /@w --></em> <strong>assuan_get_assuan_log_stream</strong> <em>(void)</em></dt>
+<dd><p>Return the stream which is currently being using for global logging.
+</p></dd></dl>
+
+<p>The log stream used by the default log handler can also be set on a
+per context basis.
+</p>
+<dl>
+<dt><a name="index-assuan_005fset_005flog_005fstream"></a>Function: <em>void</em> <strong>assuan_set_log_stream</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, FILE&nbsp;*<var>fp</var><!-- /@w -->)</em></dt>
+<dd><p>Enable debugging for the context <var>ctx</var> and write all debugging
+output to the stdio stream <var>fp</var>.  If the default log stream (used
+for non-context specific events) has not yet been set, a call to this
+functions implicitly sets this stream also to <var>fp</var>.
+</p></dd></dl>
+
+
+
+
+
+</body>
+</html>

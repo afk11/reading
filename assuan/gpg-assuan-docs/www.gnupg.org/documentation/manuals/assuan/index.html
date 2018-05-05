@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Top</title>
+
+<meta name="description" content="Developing with Assuan: Top">
+<meta name="keywords" content="Developing with Assuan: Top">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="../dir/index.html" rel="up" title="(dir)">
+<link href="Introduction.html#Introduction" rel="next" title="Introduction">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<h1 class="settitle" align="center">Developing with Assuan</h1>
+
+
+
+
+
+
+
+
+
+
+<p>This file documents the use and the internals of Assuan.
+</p>
+<p>This is Edition 2.5.0, last updated 7 December 2017, of
+<cite>The &lsquo;Developing with Assuan&rsquo; Manual</cite>, for Version 2.5.0.
+</p><br>
+<p>Published by the Free Software Foundation<br>
+51 Franklin Street, Fifth Floor<br>
+Boston, MA 02110-1301 USA
+</p><br>
+<p>Copyright &copy; 2001&ndash;2013 Free Software Foundation, Inc. <br>
+Copyright &copy; 2001&ndash;2015 g10 Code GmbH
+</p><br>
+<p>Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 3 of the License, or (at your
+option) any later version. The text of the license can be found in the
+section entitled &ldquo;Copying&rdquo;.
+</p>
+
+<a name="SEC_Overview"></a>
+<h2 class="shortcontents-heading">Short Table of Contents</h2>
+
+<div class="shortcontents">
+<ul class="no-bullet">
+<li><a name="stoc-Introduction-to-Assuan" href="#toc-Introduction-to-Assuan">1 Introduction to Assuan</a></li>
+<li><a name="stoc-Description-of-the-Assuan-protocol_002e" href="#toc-Description-of-the-Assuan-protocol_002e">2 Description of the Assuan protocol.</a></li>
+<li><a name="stoc-Implementation-1" href="#toc-Implementation-1">3 Implementation</a></li>
+<li><a name="stoc-Preparation-1" href="#toc-Preparation-1">4 Preparation</a></li>
+<li><a name="stoc-Generalities-1" href="#toc-Generalities-1">5 Generalities</a></li>
+<li><a name="stoc-How-to-develop-an-Assuan-client" href="#toc-How-to-develop-an-Assuan-client">6 How to develop an Assuan client</a></li>
+<li><a name="stoc-How-to-develop-an-Assuan-server" href="#toc-How-to-develop-an-Assuan-server">7 How to develop an Assuan server</a></li>
+<li><a name="stoc-How-to-use-external-I_002fO-event-loops" href="#toc-How-to-use-external-I_002fO-event-loops">8 How to use external I/O event loops</a></li>
+<li><a name="stoc-Utility-functions" href="#toc-Utility-functions">9 Utility functions</a></li>
+<li><a name="stoc-Socket-wrapper-functions" href="#toc-Socket-wrapper-functions">10 Socket wrapper functions</a></li>
+<li><a name="stoc-GNU-Lesser-General-Public-License" href="#toc-GNU-Lesser-General-Public-License">GNU Lesser General Public License</a></li>
+<li><a name="stoc-GNU-General-Public-License" href="#toc-GNU-General-Public-License">GNU General Public License</a></li>
+<li><a name="stoc-Index-1" href="#toc-Index-1">Index</a></li>
+</ul>
+</div>
+
+<a name="SEC_Contents"></a>
+<h2 class="contents-heading">Table of Contents</h2>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-Introduction-to-Assuan" href="Introduction.html#Introduction">1 Introduction to Assuan</a></li>
+  <li><a name="toc-Description-of-the-Assuan-protocol_002e" href="Assuan.html#Assuan">2 Description of the Assuan protocol.</a></li>
+  <li><a name="toc-Implementation-1" href="Implementation.html#Implementation">3 Implementation</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Server-responses-1" href="Server-responses.html#Server-responses">3.1 Server responses</a></li>
+    <li><a name="toc-Client-requests-1" href="Client-requests.html#Client-requests">3.2 Client requests</a></li>
+    <li><a name="toc-Error-codes-1" href="Error-codes.html#Error-codes">3.3 Error codes</a></li>
+  </ul></li>
+  <li><a name="toc-Preparation-1" href="Preparation.html#Preparation">4 Preparation</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Header-1" href="Header.html#Header">4.1 Header</a></li>
+    <li><a name="toc-Building-sources-1" href="Building-sources.html#Building-sources">4.2 Building sources</a></li>
+    <li><a name="toc-Building-sources-using-Automake" href="Automake.html#Automake">4.3 Building sources using Automake</a></li>
+    <li><a name="toc-Multi-Threading-1" href="Multi-Threading.html#Multi-Threading">4.4 Multi Threading</a></li>
+  </ul></li>
+  <li><a name="toc-Generalities-1" href="Generalities.html#Generalities">5 Generalities</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Data-Types-used-by-the-library" href="Data-Types.html#Data-Types">5.1 Data Types used by the library</a></li>
+    <li><a name="toc-Initializing-the-library-1" href="Initializing-the-library.html#Initializing-the-library">5.2 Initializing the library</a></li>
+    <li><a name="toc-Default-Log-Handler-1" href="Default-Log-Handler.html#Default-Log-Handler">5.3 Default Log Handler</a></li>
+    <li><a name="toc-How-to-work-with-contexts" href="Contexts.html#Contexts">5.4 How to work with contexts</a></li>
+    <li><a name="toc-How-to-communicate-with-the-peer" href="Reading-and-Writing.html#Reading-and-Writing">5.5 How to communicate with the peer</a></li>
+  </ul></li>
+  <li><a name="toc-How-to-develop-an-Assuan-client" href="Client-code.html#Client-code">6 How to develop an Assuan client</a></li>
+  <li><a name="toc-How-to-develop-an-Assuan-server" href="Server-code.html#Server-code">7 How to develop an Assuan server</a></li>
+  <li><a name="toc-How-to-use-external-I_002fO-event-loops" href="External-I_002fO-Loop.html#External-I_002fO-Loop">8 How to use external I/O event loops</a>
+  <ul class="no-bullet">
+    <li><a name="toc-External-I_002fO-event-loops-in-the-client_002e" href="External-I_002fO-Loop-Client.html#External-I_002fO-Loop-Client">8.1 External I/O event loops in the client.</a></li>
+    <li><a name="toc-External-I_002fO-event-loops-in-the-server_002e" href="External-I_002fO-Loop-Server.html#External-I_002fO-Loop-Server">8.2 External I/O event loops in the server.</a></li>
+  </ul></li>
+  <li><a name="toc-Utility-functions" href="Utilities.html#Utilities">9 Utility functions</a></li>
+  <li><a name="toc-Socket-wrapper-functions" href="Socket-wrappers.html#Socket-wrappers">10 Socket wrapper functions</a></li>
+  <li><a name="toc-GNU-Lesser-General-Public-License" href="Library-Copying.html#Library-Copying">GNU Lesser General Public License</a></li>
+  <li><a name="toc-GNU-General-Public-License" href="Copying.html#Copying">GNU General Public License</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Preamble" href="Copying.html#Preamble">Preamble</a></li>
+    <li><a name="toc-How-to-Apply-These-Terms-to-Your-New-Programs" href="Copying.html#How-to-Apply-These-Terms-to-Your-New-Programs">How to Apply These Terms to Your New Programs</a></li>
+  </ul></li>
+  <li><a name="toc-Index-1" href="Index.html#Index">Index</a></li>
+</ul>
+</div>
+
+
+
+<a name="Top"></a>
+<div class="header">
+<p>
+Next: <a href="Introduction.html#Introduction" accesskey="n" rel="next">Introduction</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Introduction-1"></a>
+<h1 class="top">Introduction</h1>
+<a name="index-introduction"></a>
+
+<p>This manual documents how to exploit the Assuan library, a simple
+interprocess communcation library.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Introduction.html#Introduction" accesskey="1">Introduction</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">An introduction to and the motivation behind Assuan.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Assuan.html#Assuan" accesskey="2">Assuan</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Description of the Assuan protocol.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Implementation.html#Implementation" accesskey="3">Implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Overview of the implementation.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Preparation.html#Preparation" accesskey="4">Preparation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What you should do before using the library.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Generalities.html#Generalities" accesskey="5">Generalities</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Initialization code and data types used.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Client-code.html#Client-code" accesskey="6">Client code</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to develop an Assuan client.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Server-code.html#Server-code" accesskey="7">Server code</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to develop an Assuan server.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="8">External I/O Loop</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to use external I/O event loops.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Utilities.html#Utilities" accesskey="9">Utilities</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Utility functions.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Socket-wrappers.html#Socket-wrappers">Socket wrappers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Socket wrapper functions.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
+Miscellaneous
+
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Library-Copying.html#Library-Copying">Library Copying</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU Lesser General Public License says
+                        how you can copy and share Assuan.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Copying.html#Copying">Copying</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How you can copy and share this manual.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
+Indices
+
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Index.html#Index">Index</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Index of concepts and symbol names.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
+</pre></th></tr></table>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Introduction.html#Introduction" accesskey="n" rel="next">Introduction</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

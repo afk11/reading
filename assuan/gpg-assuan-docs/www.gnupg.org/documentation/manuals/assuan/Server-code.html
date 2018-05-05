@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Server code</title>
+
+<meta name="description" content="Developing with Assuan: Server code">
+<meta name="keywords" content="Developing with Assuan: Server code">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="External-I_002fO-Loop.html#External-I_002fO-Loop" rel="next" title="External I/O Loop">
+<link href="Client-code.html#Client-code" rel="prev" title="Client code">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Server-code"></a>
+<div class="header">
+<p>
+Next: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="n" rel="next">External I/O Loop</a>, Previous: <a href="Client-code.html#Client-code" accesskey="p" rel="prev">Client code</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-to-develop-an-Assuan-server"></a>
+<h2 class="chapter">7 How to develop an Assuan server</h2>
+
+<p>Implementing a server for Assuan is a bit more complex than a client.
+However, it is a straightforward task we are going to explain using a
+commented example.
+</p>
+<p>The list of the implemented server commands is defined by a table like:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  static struct {
+    const char *name;
+    int (*handler) (assuan_context_t, char *line);
+  } command_table[] = {
+    { &quot;FOO&quot;, cmd_foo },
+    { &quot;BAR&quot;, cmd_bar },
+    { &quot;INPUT&quot;, NULL },
+    { &quot;OUTPUT&quot;, NULL },
+    { NULL }};
+</pre></div>
+
+<p>For convenience this table is usually put after the actual command
+handlers (<code>cmd_foo</code>, <code>cmd_bar</code>) or even put inside
+<code>command_handler</code> (see below).  Note that the commands
+<code>INPUT</code> and <code>OUTPUT</code> do not require a handler because
+Libassuan provides a default handler for them.  It is however possible
+to assign a custom handler.
+</p>
+<p>A prerequisite for this example code is that a client has already
+connected to the server.  Often there are two modes combined in one
+program: A pipe-based server, where a client has forked the server
+process, or a Unix domain socket based server that is listening on the
+socket.
+</p>
+<div class="example">
+<pre class="example">void
+command_handler (int fd)
+{
+  gpg_error_t rc;
+  int i;
+  assuan_context_t ctx;
+
+  rc = assuan_new (&amp;ctx);
+  if (rc)
+    {
+      fprintf (stderr, &quot;server context creation failed: %s\n&quot;,
+               gpg_strerror(rc));
+      return;
+    }
+
+  if (fd == -1)
+    {
+      assuan_fd_t filedes[2];
+
+      filedes[0] = assuan_fd_from_posix_fd (0);
+      filedes[1] = assuan_fd_from_posix_fd (1);
+      rc = assuan_init_pipe_server (ctx, filedes);
+    }
+  else
+    rc = assuan_init_socket_server (ctx, fd, ASSUAN_SOCKET_SERVER_ACCEPTED);
+  if (rc)
+    {
+      fprintf (stderr, &quot;server init failed: %s\n&quot;, gpg_strerror (rc));
+      return;
+    }
+</pre></div>
+
+<p>This is the first part of the command handler.  We start off by
+allocating a new Assuan context with <code>assuan_new</code>.
+See <a href="Contexts.html#function-assuan_005fnew">function assuan_new</a>.
+</p>
+<p>In case this is called as a pipe based server, <var>fd</var> will be based
+as <var>fd</var> and the code assumes that the server&rsquo;s <code>stdin</code> and
+<code>stdout</code> file handles are connected to a pipe.  The
+initialization is thus done using the function:
+</p>
+<dl>
+<dt><a name="index-assuan_005finit_005fpipe_005fserver"></a>Function: <em>gpg_error_t</em> <strong>assuan_init_pipe_server</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>filedes</var>[2]<!-- /@w -->)</em></dt>
+<dd>
+<p>This function takes the two file descriptors from <var>filedes</var> and
+returns a new Assuan context at <var>r_ctx</var>.  As usual, a return value
+of <code>0</code> indicates success and a failure is indicated by
+returning an error value.  In case of error, <code>NULL</code> will be stored
+at <var>r_ctx</var>.
+</p>
+<p>In case the server has been called using a bi-directional pipe
+(socketpair), <var>filedes</var> is ignored and the file descriptor is
+taken from the environment variable <code>_assuan_connection_fd</code>.  You
+generally don&rsquo;t need to know this, because <code>assuan_pipe_connect</code>,
+which is called by the client to connect to such a server,
+automagically sets this variable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005finit_005fsocket_005fserver"></a>Function: <em>gpg_error_t</em> <strong>assuan_init_socket_server</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_fd_t</span>&nbsp;<var>fd</var><!-- /@w -->, unsigned&nbsp;int&nbsp;<var>flags</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This function takes the file descriptor <var>fd</var>, which is expected to
+be associated with a socket, and an Assuan context <var>ctx</var>.  The
+following bits are currently defined for <var>flags</var>:
+</p>
+<dl compact="compact">
+<dt><code>ASSUAN_SOCKET_SERVER_FDPASSING</code></dt>
+<dd><p>If set, <code>sendmsg</code> and <code>recvmesg</code> are used for input and
+output, which enables the use of descriptor passing.
+</p></dd>
+<dt><code>ASSUAN_SOCKET_SERVER_ACCEPTED</code></dt>
+<dd><p>If set, <var>fd</var> refers to an already accepted socket.  That is,
+Libassuan won&rsquo;t call <var>accept</var> for it.  It is suggested to set this
+bit as it allows better control of the connection state.
+</p></dd>
+</dl>
+
+<p>As usual, a return value of <code>0</code> indicates success and a failure
+is indicated by returning an error value.
+</p></dd></dl>
+
+<p>On the Windows platform the following function needs to be called after
+<code>assuan_init_socket_server</code>:
+</p>
+<dl>
+<dt><a name="index-assuan_005fset_005fsock_005fnonce"></a>Function: <em>void</em> <strong>assuan_set_sock_nonce</strong> <em>(         <span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->,         <span class="nolinebreak">assuan_sock_nonce_t</span>&nbsp;*<var>nonce</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Save a copy of <var>nonce</var> in context <var>ctx</var>.  This should be used
+to register the server&rsquo;s nonce with a context established by
+<code>assuan_init_socket_server</code>.  It is technically only needed for
+Windows, but it does no harm to use it on other systems.
+</p></dd></dl>
+
+
+<p>After error checking, the implemented assuan commands are registered with
+the server.
+</p>
+<div class="example">
+<pre class="example">  for (i = 0; command_table[i].name; i++)
+    {
+      rc = assuan_register_command (ctx,
+                                    command_table[i].name,
+                                    command_table[i].handler, NULL);
+      if (rc)
+        {
+          fprintf (stderr, &quot;register failed: %s\n&quot;, gpg_strerror (rc));
+          assuan_release (ctx);
+          return;
+        }
+    }
+</pre></div>
+
+<dl>
+<dt><a name="index-gpg_005ferror_005ft-_0028_002aassuan_005fhandler_005ft_0029-_0028assuan_005fcontext_005ft-ctx_002c-char-_002aline_0029"></a>Data type: <strong>gpg_error_t (*assuan_handler_t) (<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, char&nbsp;*<var>line</var><!-- /@w -->)</strong></dt>
+<dd><p>This is the function invoked by <small>ASSUAN</small> for various command
+related callback functions.  Some of these callback functions have a
+different type, but most use <code>assuan_handler_t</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005fcommand"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_command</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var><span class="nolinebreak">cmd_string</span></var><!-- /@w -->, <span class="nolinebreak">assuan_handler_t</span>&nbsp;<var>handler</var><!-- /@w -->, const&nbsp;char&nbsp;*<var><span class="nolinebreak">help_string</span></var><!-- /@w -->)</em></dt>
+<dd>
+<p>This registers the command named <var>cmd_string</var> with the Assuan
+context <var>ctx</var>.  <var>handler</var> is the function called by Libassuan
+if this command is received from the client.  <var>NULL</var> may be used
+for <var>handler</var> to use a default handler (this only works with a few
+pre-defined commands).  Note that several default handlers have
+already been registered when the context has been created: <code>NOP</code>,
+<code>CANCEL</code>, <code>OPTION</code>, <code>BYE</code>, <code>AUTH</code>, <code>RESET</code>
+and <code>END</code>.  It is possible, but not recommended, to override
+these commands.
+</p>
+<p><var>help_string</var> is a help string that is used for automatic
+documentation.  It should contain a usage line followed by an empty
+line and a complete description.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005fpost_005fcmd_005fnotify"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_post_cmd_notify</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, void&nbsp;(*<var>fnc</var><span class="nolinebreak">)(assuan_context_t)</span><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;<var>err</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Register a function to be called right after a command has been
+processed.  <var>err</var> is the result code from the last internal assuan
+operation and not the one returned by the handler.  It may be used for
+command-related cleanup.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005fbye_005fnotify"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_bye_notify</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_handler_t</span>&nbsp;<var>handler</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Register function <var>fnc</var> with context <var>ctx</var> to be called right
+before the standard handler for the <code>BYE</code> command is being called.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005freset_005fnotify"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_reset_notify</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_handler_t</span>&nbsp;<var>handler</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Register function <var>fnc</var> with context <var>ctx</var> to be called right
+before the standard handler for the <code>RESET</code> command is being called.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005fcancel_005fnotify"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_cancel_notify</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_handler_t</span>&nbsp;<var>handler</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Register function <var>fnc</var> with context <var>ctx</var> to be called right
+before the standard handler for the <code>RESET</code> command is being called.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005foption_005fhandler"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_option_handler</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;(*<var>fnc</var><span class="nolinebreak">)(assuan_context_t,</span>&nbsp;const&nbsp;char*,&nbsp;const&nbsp;char*)<!-- /@w -->)</em></dt>
+<dd>
+<p>Register function <var>fnc</var> with context <var>ctx</var> for processing
+options.  That function is being called with the context, the name and
+the value of the option.  Leading and trailing spaces are removed from
+the name and the value.  The optional leading two dashes of the name
+are removed as well.  If no value has been given, an empty string is
+passed.  The function needs to return <code>0</code> on success or an error
+code.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005finput_005fnotify"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_input_notify</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_handler_t</span>&nbsp;<var>handler</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Although the input function may be overridden with a custom handler, it
+is often more convenient to use the default handler and to know whether
+an <code>INPUT</code> command has been seen and successfully parsed.  The second
+argument passed to that function is the entire line.  Because that line
+has already been parsed when the function gets called, a file descriptor
+set with the <code>INPUT</code> command may already be used.  That file
+descriptor is available by calling <code>assuan_get_input_fd</code>.  If the
+notification function returns an error, the input fd does not change.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fregister_005foutput_005fnotify"></a>Function: <em>gpg_error_t</em> <strong>assuan_register_output_notify</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_handler_t</span>&nbsp;<var>handler</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Although the output function may be overridden with a custom handler, it
+is often more convenient to use the default handler and to know whether
+an <code>OUTPUT</code> command has been seen and successfully parsed.  The second
+argument passed to that function is the entire line.  Because that line
+has already been parsed when the function gets called, a file descriptor
+set with the <code>OUTPUT</code> command may already be used.  That file
+descriptor is available by calling <code>assuan_get_output_fd</code>. If the
+notification function returns an error, the output fd does not change.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fset_005fhello_005fline"></a>Function: <em>gpg_error_t</em> <strong>assuan_set_hello_line</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>line</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This is not actually a register function but may be called also after
+registering commands. It changes the &ldquo;Hello&rdquo; line, sent by the
+server to the client as a first response, from a default string to the
+string <var>line</var>.  For logging purposes, it is often useful to use
+such a custom hello line which may tell version numbers and such.
+Linefeeds are allowed in this string, however, each line needs to be
+shorter than the Assuan line length limit.
+</p></dd></dl>
+
+<p>Now that everything has been setup, we can start to process our
+clients requests.
+</p>
+<div class="example">
+<pre class="example">  for (;;)
+    {
+      rc = assuan_accept (ctx);
+      if (rc == -1)
+        break;
+      else if (rc)
+        {
+          fprintf (stderr, &quot;accept problem: %s\n&quot;, gpg_strerror (rc));
+          break;
+        }
+
+      rc = assuan_process (ctx);
+      if (rc)
+        {
+          fprintf (stderr, &quot;processing failed: %s\n&quot;, gpg_strerror (rc));
+          continue;
+        }
+    }
+  assuan_release (ctx);
+}
+</pre></div>
+
+<p>For future extensibility and to properly detect the end of the
+connection the core of the server should loop over the
+accept and process calls.
+</p>
+<dl>
+<dt><a name="index-assuan_005faccept"></a>Function: <em>gpg_error_t</em> <strong>assuan_accept</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>A call to this function cancel any existing connection and waits for a
+connection from a client (that might be skipped, depending on the type
+of the server).  The initial handshake is performed which may include an
+initial authentication or encryption negotiation.  On success <code>0</code>
+is returned.  An error value will be returned if the connection could for
+some reason not be established.  An error code of <code>GPG_ERR_EOF</code> indicates
+the end of the connection.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fprocess"></a>Function: <em>gpg_error_t</em> <strong>assuan_process</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This function is used to handle the Assuan protocol after a connection
+has been established using <code>assuan_accept</code>.  It is the main
+protocol handler responsible for reading the client commands and calling
+the appropriate handlers.  The function returns <code>0</code> on success or
+an error value if something went seriously wrong.  Error values from the
+individual command handlers, i.e. operational error, are not seen here.
+</p></dd></dl>
+
+<p>That is all needed for the server code.  You only need to come up with
+the code for the individual command handlers.  Take care that the line
+passed to the command handlers is allocated statically within the
+context and calls to Assuan functions may modify that line.  You are
+also allowed to modify that line which makes parsing much easier.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="n" rel="next">External I/O Loop</a>, Previous: <a href="Client-code.html#Client-code" accesskey="p" rel="prev">Client code</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

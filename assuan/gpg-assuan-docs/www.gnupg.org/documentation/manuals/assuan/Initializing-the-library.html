@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Initializing the library</title>
+
+<meta name="description" content="Developing with Assuan: Initializing the library">
+<meta name="keywords" content="Developing with Assuan: Initializing the library">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Generalities.html#Generalities" rel="up" title="Generalities">
+<link href="Default-Log-Handler.html#Default-Log-Handler" rel="next" title="Default Log Handler">
+<link href="Data-Types.html#Data-Types" rel="prev" title="Data Types">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Initializing-the-library"></a>
+<div class="header">
+<p>
+Next: <a href="Default-Log-Handler.html#Default-Log-Handler" accesskey="n" rel="next">Default Log Handler</a>, Previous: <a href="Data-Types.html#Data-Types" accesskey="p" rel="prev">Data Types</a>, Up: <a href="Generalities.html#Generalities" accesskey="u" rel="up">Generalities</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Initializing-the-library-1"></a>
+<h3 class="section">5.2 Initializing the library</h3>
+
+<p>Libassuan makes use of Libgpg-error and assumes that Libgpg-error has
+been initialized.  In general <code>gpgrt_check_version</code> should be
+called to guarantee this; the Libgpg-error manual for details.
+</p>
+<p>Libassuan itself requires no initialization. There are however some
+initialization hooks provided which are often useful.  These should be
+called as early as possible and in a multi-threaded application before
+a second thread is created.
+</p>
+<p>These functions initialize default values that are used at context
+creation with <code>assuan_new</code>.  As there can only be one default,
+all values can also be set directly with <code>assuan_new_ext</code> or with
+context-specific functions after context creation.
+</p>
+<p>If your application uses its own memory allocation functions or wrappers
+it is good idea to tell <code>libassuan</code> about it so it can make use of the
+same functions or wrappers:
+</p>
+<dl>
+<dt><a name="index-struct-assuan_005fmalloc_005fhooks"></a>Data type: <strong>struct assuan_malloc_hooks</strong></dt>
+<dd><p>This structure is used to store the memory allocation callback
+interface functions.  It has the following members, whose semantics
+are identical to the corresponding system functions:
+</p>
+<dl compact="compact">
+<dt><code>void *(*malloc) (size_t cnt)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to allocate memory for a context.
+</p>
+</dd>
+<dt><code>void *(*realloc) (void *ptr, size_t cnt)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to reallocate memory for a context.
+</p>
+</dd>
+<dt><code>void (*free) (void *ptr)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to release memory for a context.
+</p></dd>
+</dl>
+</dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fmalloc_005fhooks_005ft"></a>Data type: <strong>assuan_malloc_hooks_t</strong></dt>
+<dd><p>This is a pointer to a <code>struct assuan_malloc_hooks</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fset_005fmalloc_005fhooks"></a>Function: <em>void</em> <strong>assuan_set_malloc_hooks</strong> <em>(<span class="nolinebreak">assuan_malloc_hooks_t</span>&nbsp;<var><span class="nolinebreak">malloc_hooks</span></var><!-- /@w -->)</em></dt>
+<dd><p>This function sets the default allocation hooks for new contexts
+allocated with <code>assuan_new</code>.  You need to provide all three
+functions.  Those functions need to behave exactly as their standard
+counterparts <code>malloc</code>, <code>realloc</code> and <code>free</code>.  If you
+write your own functions, please take care to set <code>errno</code>
+whenever an error has occurred.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fget_005fmalloc_005fhooks"></a>Function: <em>assuan_malloc_hooks_t</em> <strong>assuan_get_malloc_hooks</strong> <em>()</em></dt>
+<dd><p>This function gets the default allocation hooks for new contexts
+allocated with <code>assuan_new</code>.  The result structure is statically
+allocated and should not be modified.
+</p></dd></dl>
+
+<p>The <small>ASSUAN</small> library uses <code>libgpg-error</code> error values, which
+consist and error code and an error source.  The default source used
+by contexts allocated with <code>assuan_new</code> can be set with the
+following function.
+</p>
+<a name="function-assuan_005fset_005fgpg_005ferr_005fsource"></a><dl>
+<dt><a name="index-assuan_005fset_005fgpg_005ferr_005fsource"></a>Function: <em>void</em> <strong>assuan_set_gpg_err_source</strong> <em>(<span class="nolinebreak">gpg_err_source_t</span>&nbsp;<var><span class="nolinebreak">err_source</span></var><!-- /@w -->)</em></dt>
+<dd><p>This function sets the default error source for errors generated by
+contexts allocated with <code>assuan_new</code>.
+</p>
+<p>One way to call this function is
+</p><div class="smallexample">
+<pre class="smallexample">assuan_set_gpg_err_source (GPG_ERR_SOURCE_DEFAULT);
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fget_005fgpg_005ferr_005fsource"></a>Function: <em>gpg_err_source_t</em> <strong>assuan_get_gpg_err_source</strong> <em>(void)</em></dt>
+<dd><p>This function gets the default error source for errors generated by
+contexts allocated with <code>assuan_new</code>.
+</p></dd></dl>
+
+<p>To integrate assuan logging and diagnostics into your own logging
+system, you may use the following two functions:
+</p>
+<dl>
+<dt><a name="index-int-_0028_002aassuan_005flog_005fcb_005ft_0029-_0028assuan_005fcontext_005ft-ctx_002c-void-_002ahook_005fvalue_002c-unsigned-int-cat_002c-const-char-_002amsg_0029"></a>Data type: <strong>int (*assuan_log_cb_t) (<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">hook_value</span></var><!-- /@w -->, unsigned&nbsp;int&nbsp;<var>cat</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>msg</var><!-- /@w -->)</strong></dt>
+<dd><p>The user-provided callback function takes a context <var>ctx</var>, for
+which the message <var>msg</var> was generated, and a hook value
+<var>hook_value</var> that was supplied when the log handler was registered
+for the context with <code>assuan_set_log_cb</code>, and a category
+<var>cat</var>.  The category is one of:
+</p>
+<dl compact="compact">
+<dt><code>ASSUAN_LOG_INIT</code></dt>
+<dt><code>ASSUAN_LOG_CTX</code></dt>
+<dt><code>ASSUAN_LOG_ENGINE</code></dt>
+<dt><code>ASSUAN_LOG_DATA</code></dt>
+<dd><p>RFU
+</p></dd>
+<dt><code>ASSUAN_LOG_SYSIO</code></dt>
+<dd><p>Log lowlevel I/O data.
+</p></dd>
+<dt><code>ASSUAN_LOG_CONTROL</code></dt>
+<dd><p>Log the control channel.
+</p></dd>
+</dl>
+
+<p>The user may then, depending on the category, write the message to a
+log file or treat it in some other way.
+</p>
+<p>If <var>msg</var> is a null pointer, then no message should be logged, but
+the function should return 1 if it is interested in log messages with
+the category <var>cat</var>.  If it is not interested, 0 should be
+returned.  This allows <code>libassuan</code> to suppress the generation of
+expensive debug output.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fset_005flog_005fcb"></a>Function: <em>void</em> <strong>assuan_set_log_cb</strong> <em>(<span class="nolinebreak">assuan_log_cb_t</span>&nbsp;<var><span class="nolinebreak">log_cb</span></var><!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">log_cb_data</span></var><!-- /@w -->)</em></dt>
+<dd><p>This function sets the default logging handler for log messages
+generated by contexts allocated with <code>assuan_new</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fget_005flog_005fcb"></a>Function: <em>void</em> <strong>assuan_get_log_cb</strong> <em>(<span class="nolinebreak">assuan_log_cb_t</span>&nbsp;*<var><span class="nolinebreak">log_cb</span></var><!-- /@w -->, void&nbsp;**<var><span class="nolinebreak">log_cb_data</span></var><!-- /@w -->)</em></dt>
+<dd><p>This function gets the default logging handler for log messages
+generated by contexts allocated with <code>assuan_new</code>.
+</p></dd></dl>
+
+<p>You do not need to set a log handler, as <small>ASSUAN</small> provides a
+configurable default log handler that should be suitable for most
+purposes.  Logging can be disabled completely by setting the log
+handler to a null pointer.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Default-Log-Handler.html#Default-Log-Handler" accesskey="n" rel="next">Default Log Handler</a>, Previous: <a href="Data-Types.html#Data-Types" accesskey="p" rel="prev">Data Types</a>, Up: <a href="Generalities.html#Generalities" accesskey="u" rel="up">Generalities</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

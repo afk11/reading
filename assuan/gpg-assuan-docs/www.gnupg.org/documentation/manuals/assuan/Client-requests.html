@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Client requests</title>
+
+<meta name="description" content="Developing with Assuan: Client requests">
+<meta name="keywords" content="Developing with Assuan: Client requests">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Implementation.html#Implementation" rel="up" title="Implementation">
+<link href="Error-codes.html#Error-codes" rel="next" title="Error codes">
+<link href="Server-responses.html#Server-responses" rel="prev" title="Server responses">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Client-requests"></a>
+<div class="header">
+<p>
+Next: <a href="Error-codes.html#Error-codes" accesskey="n" rel="next">Error codes</a>, Previous: <a href="Server-responses.html#Server-responses" accesskey="p" rel="prev">Server responses</a>, Up: <a href="Implementation.html#Implementation" accesskey="u" rel="up">Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Client-requests-1"></a>
+<h3 class="section">3.2 Client requests</h3>
+
+<p>The server waits for client requests after sending an Okay or Error.
+The client should not issue a request in other cases.
+</p>
+<div class="example">
+<pre class="example"><var>command</var> &lt;parameters&gt;
+</pre></div>
+
+<p><var>command</var> is a one word string without preceding white space.
+Parameters are command specific, CR, LF and the percent signs should
+be percent escaped as described above.  To send a backslash as the
+last character it should also be percent escaped.  Percent escaping is
+allowed anywhere in the parameters but not in the command.  The line
+ends with a CR, LF pair or just a LF.
+</p>
+<p>Not yet implemented feature: If there is a need for a parameter list
+longer than the line length limit (1000 characters including command
+and CR, LF), the last character of the line (right before the CR/LF or
+LF) must be a unescaped (i.e., literal) backslash. The following line
+is then expected to be a continuation of the line with the backslash
+replaced by a blank and the line ending removed.
+</p>
+<div class="example">
+<pre class="example">D &lt;raw data&gt;
+</pre></div>
+
+<p>Sends raw data to the server.  There must be exactly one space after
+the &rsquo;D&rsquo;.  The values for &rsquo;%&rsquo;, CR and LF must be percent escaped.
+These are encoded as %25, %0D and %0A, respectively.  Only uppercase
+letters should be used in the hexadecimal representation.  Other
+characters may be percent escaped for easier debugging.  All Data
+lines are considered one data stream up to the <code>OK</code> or <code>ERR</code>
+response.  Status and Inquiry Responses may be mixed with the Data
+lines.
+</p>
+<div class="example">
+<pre class="example">END
+</pre></div>
+
+<p>Lines beginning with a <code>#</code> or empty lines are ignored.  This is
+useful to comment test scripts.
+</p>
+<p>Although the commands are application specific, some of them are used
+by all protocols and partly supported by the Assuan library:
+</p>
+<dl compact="compact">
+<dt><code>BYE</code></dt>
+<dd><p>Close the connection.  The server will respond with <code>OK</code>.
+</p>
+</dd>
+<dt><code>RESET</code></dt>
+<dd><p>Reset the connection but not any existing authentication.  The server
+should release all resources associated with the connection.
+</p>
+</dd>
+<dt><code>END</code></dt>
+<dd><p>Used by a client to mark the end of raw data.  The server may send
+<code>END</code> to indicate a partial end of data.
+</p>
+</dd>
+<dt><code>HELP</code></dt>
+<dd><p>Lists all commands that the server understands as comment lines on the
+status channel.
+</p>
+</dd>
+<dt><code>QUIT</code></dt>
+<dd><p>Reserved for future extensions.
+</p>
+</dd>
+<dt><code>OPTION</code></dt>
+<dd><p>Set options for the connection.  The syntax of such a line is
+</p><div class="display">
+<pre class="display">  OPTION <var>name</var> [ [=] <var>value</var> ]
+</pre></div>
+<p>Leading and trailing spaces around <var>name</var> and <var>value</var> are
+allowed but should be ignored.  For compatibility reasons, <var>name</var>
+may be prefixed with two dashes.  The use of the equal sign is optional
+but suggested if <var>value</var> is given.
+</p>
+</dd>
+<dt><code>CANCEL</code></dt>
+<dd><p>This command is reserved for future extensions.
+</p>
+</dd>
+<dt><code>AUTH</code></dt>
+<dd><p>This command is reserved for future extensions.  Not yet specified as
+we don&rsquo;t implement it in the first phase.  See Werner&rsquo;s mail to gpa-dev on
+2001-10-25 about the rationale for measurements against local attacks.
+</p>
+</dd>
+<dt><code>NOP</code></dt>
+<dd><p>No operation.  Returns OK without any action.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Error-codes.html#Error-codes" accesskey="n" rel="next">Error codes</a>, Previous: <a href="Server-responses.html#Server-responses" accesskey="p" rel="prev">Server responses</a>, Up: <a href="Implementation.html#Implementation" accesskey="u" rel="up">Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

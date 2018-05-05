@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Reading and Writing</title>
+
+<meta name="description" content="Developing with Assuan: Reading and Writing">
+<meta name="keywords" content="Developing with Assuan: Reading and Writing">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Generalities.html#Generalities" rel="up" title="Generalities">
+<link href="Client-code.html#Client-code" rel="next" title="Client code">
+<link href="Contexts.html#Contexts" rel="prev" title="Contexts">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Reading-and-Writing"></a>
+<div class="header">
+<p>
+Previous: <a href="Contexts.html#Contexts" accesskey="p" rel="prev">Contexts</a>, Up: <a href="Generalities.html#Generalities" accesskey="u" rel="up">Generalities</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-to-communicate-with-the-peer"></a>
+<h3 class="section">5.5 How to communicate with the peer</h3>
+
+<p>What would be an IPC library without the ability to read and write
+data?  Not very useful.  Libassuan has high level functions to take
+care of of the more boring stuff, but eventually data needs to be
+written and read.
+</p>
+<p>The basic read and write functions are:
+</p>
+<dl>
+<dt><a name="index-assuan_005fread_005fline"></a>Function: <em>gpg_error_t</em> <strong>assuan_read_line</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, char&nbsp;**<var>line</var><!-- /@w -->, <span class="nolinebreak">size_t</span>&nbsp;*<var>linelen</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Read the next line written by the peer to the control channel and store
+a pointer to the buffer holding that line at the address <var>line</var>.
+The valid length of the lines is stored at the address of <var>linelen</var>.
+This buffer is valid until the next read operation on the same context
+<var>ctx</var>.  You may modify the context of this buffer.  The buffer is
+invalid (i.e. must not be used) if an error is returned.  This function
+returns <code>0</code> on success or an error value.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fwrite_005fline"></a>Function: <em>gpg_error_t</em> <strong>assuan_write_line</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>line</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Write the string <var>line</var> to the other end on the control channel.
+This string needs to be a proper formatted Assuan protocol line and
+should not include a linefeed.  Sending linefeed or <code>Nul</code>
+characters is not possible and not allowed by the assuan protocol.  This
+function shall not be used for sending data (<code>D</code>) lines.  This
+function returns <code>0</code> on success or an error value.
+</p></dd></dl>
+
+<p>To actually send bulk data lines a specialized function is available:
+</p>
+<dl>
+<dt><a name="index-assuan_005fsend_005fdata"></a>Function: <em>gpg_error_t</em> <strong>assuan_send_data</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;void&nbsp;*<var>buffer</var><!-- /@w -->, <span class="nolinebreak">size_t</span>&nbsp;<var>length</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This function is used by a server or a client to send <var>length</var> bytes
+of bulk data in <var>buffer</var> to the other end on the control channel.
+The data will be escaped as required by the Assuan protocol and may get
+buffered until a line is full.  To flush any pending data, <var>buffer</var>
+may be passed as <code>NULL</code> and <var>length</var> be <code>0</code>.
+</p>
+<p>When used by a client, this flush operation does also send the
+<code>END</code> command to terminate the response on an <code>INQUIRE</code>
+request.  Note that the function <code>assuan_transact</code> takes care of
+sending this <code>END</code> itself.
+</p>
+<p>This function returns <code>0</code> on success or an error value.
+</p></dd></dl>
+
+<p>The input and output of data can be controlled at a higher level using
+an I/O monitor.
+</p>
+<dl>
+<dt><a name="index-unsigned-int-_0028_002aassuan_005fio_005fmonitor_005ft_0029-_0028assuan_005fcontext_005ft-ctx_002c-void-_002ahook_005fvalue_002c-int-inout_002c-const-char-_002aline_002c-size_005ft-linelen_0029"></a>Data type: <strong>unsigned int (*assuan_io_monitor_t) (<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">hook_value</span></var><!-- /@w -->, int&nbsp;<var>inout</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>line</var><!-- /@w -->, <span class="nolinebreak">size_t</span>&nbsp;<var>linelen</var><!-- /@w -->)</strong></dt>
+<dd><p>The monitor function is called right after a line has been received,
+if <var>inout</var> is <code>ASSUAN_IO_FROM_PEER</code>, or just before it is
+send, if <var>inout</var> is <code>ASSUAN_IO_TO_PEER</code>.  The
+<var>hook_value</var> is provided by the user when registering the I/O
+monitor function with a context using <code>assuan_set_io_monitor</code>.
+The callback function should return the bitwise OR of some (or none) of the
+following flags:
+</p>
+<dl compact="compact">
+<dt><code>ASSUAN_IO_MONITOR_NOLOG</code></dt>
+<dd><p>Active logging of this line is suppressed.  This can reduce debug
+output in the case of a frequent message.
+</p></dd>
+<dt><code>ASSUAN_IO_MONITOR_IGNORE</code></dt>
+<dd><p>The whole output line is discarded.
+</p></dd>
+</dl>
+</dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fset_005fio_005fmonitor"></a>Function: <em>void</em> <strong>assuan_set_io_monitor</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_io_monitor_t</span>&nbsp;<var><span class="nolinebreak">io_monitor</span></var><!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">hook_data</span></var><!-- /@w -->)</em></dt>
+<dd><p>This function registers an I/O monitor <var>io_monitor</var> for the
+context <var>ctx</var> with the hook value <var>hook_data</var>.
+</p></dd></dl>
+
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Contexts.html#Contexts" accesskey="p" rel="prev">Contexts</a>, Up: <a href="Generalities.html#Generalities" accesskey="u" rel="up">Generalities</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

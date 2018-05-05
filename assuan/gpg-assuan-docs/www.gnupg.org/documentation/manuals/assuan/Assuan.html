@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Assuan</title>
+
+<meta name="description" content="Developing with Assuan: Assuan">
+<meta name="keywords" content="Developing with Assuan: Assuan">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Implementation.html#Implementation" rel="next" title="Implementation">
+<link href="Introduction.html#Introduction" rel="prev" title="Introduction">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Assuan"></a>
+<div class="header">
+<p>
+Next: <a href="Implementation.html#Implementation" accesskey="n" rel="next">Implementation</a>, Previous: <a href="Introduction.html#Introduction" accesskey="p" rel="prev">Introduction</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Description-of-the-Assuan-protocol_002e"></a>
+<h2 class="chapter">2 Description of the Assuan protocol.</h2>
+
+<p>The architecture of the modular GnuPG system is based on several
+highly specialized modules which form a network of clients and
+servers.  A common framework for intermodule communication is
+therefore needed and implemented as a library.
+</p>
+<p>Goals:
+</p>
+<ul>
+<li> Common framework for module communication
+</li><li> Easy debugging
+</li><li> Easy module testing
+</li><li> Extensible
+</li><li> Optional authentication and encryption facility
+</li><li> Usable to access external hardware
+</li></ul>
+
+
+<p>Design criteria:
+</p>
+<ul>
+<li> Client/Server with back channel
+</li><li> Use a mainly text based protocol
+</li><li> Escape certain control characters
+</li><li> Allow indefinite data length
+</li><li> Request confidentiality for parts of the communication
+</li><li> Dummy module to allow direct linking of client and server
+</li><li> Inline data or descriptor passing for bulk data
+</li><li> No protection against DoS needed
+</li><li> Subliminal channels are not an issue
+</li></ul>
+
+
+
+
+
+</body>
+</html>

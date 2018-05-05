@@ -1,0 +1,356 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Contexts</title>
+
+<meta name="description" content="Developing with Assuan: Contexts">
+<meta name="keywords" content="Developing with Assuan: Contexts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Generalities.html#Generalities" rel="up" title="Generalities">
+<link href="Reading-and-Writing.html#Reading-and-Writing" rel="next" title="Reading and Writing">
+<link href="Default-Log-Handler.html#Default-Log-Handler" rel="prev" title="Default Log Handler">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Contexts"></a>
+<div class="header">
+<p>
+Next: <a href="Reading-and-Writing.html#Reading-and-Writing" accesskey="n" rel="next">Reading and Writing</a>, Previous: <a href="Default-Log-Handler.html#Default-Log-Handler" accesskey="p" rel="prev">Default Log Handler</a>, Up: <a href="Generalities.html#Generalities" accesskey="u" rel="up">Generalities</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-to-work-with-contexts"></a>
+<h3 class="section">5.4 How to work with contexts</h3>
+
+<p>Some operations work globally on the library, but most operate in a
+context, which saves state across operations.  To allow the use of
+<code>libassuan</code> in mixed environments, such as in a library using
+GPGME and an application using GPGME, the context is very extensive
+and covers utilitary information like memory allocation callbacks as
+well as specific information associated with client/server operations.
+</p>
+<a name="function-assuan_005fnew"></a><dl>
+<dt><a name="index-assuan_005fnew"></a>Function: <em>gpg_error_t</em> <strong>assuan_new</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;*<var><span class="nolinebreak">ctx_p</span></var><!-- /@w -->)</em></dt>
+<dd><p>The function <code>assuan_new</code> creates a new context, using the global
+default memory allocation, log handler and <code>libgpg-error</code> source.
+It is equivalent to
+</p>
+<div class="smallexample">
+<pre class="smallexample">gpg_error_t err;
+assuan_log_cb_t log_cb;
+void *log_cb_data;
+
+assuan_get_log_cb (&amp;log_cb, &amp;log_cb_data);
+err = assuan_new_ext (ctx_p, assuan_get_gpg_err_source (),
+                      assuan_get_malloc_hooks (), log_cb, log_cb_data);
+</pre></div>
+
+<p>As you can see, this is not thread-safe.  Take care not to modify the
+memory allocation hooks or log callback handler concurrently with
+<code>assuan_new</code>.
+</p>
+<p>The function returns an error if a memory allocation error occurs, and
+0 with the new context in <var>ctx_p</var> otherwise.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fnew_005fext"></a>Function: <em>gpg_error_t</em> <strong>assuan_new_ext</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;*<var><span class="nolinebreak">ctx_p</span></var><!-- /@w -->, <span class="nolinebreak">gpg_err_source_t</span>&nbsp;<var><span class="nolinebreak">err_source</span></var><!-- /@w -->, <span class="nolinebreak">assuan_malloc_hooks_t</span>&nbsp;<var><span class="nolinebreak">malloc_hooks</span></var><!-- /@w -->, <span class="nolinebreak">assuan_log_cb_t</span>&nbsp;<var><span class="nolinebreak">log_cb</span></var><!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">log_cb_data</span></var><!-- /@w -->)</em></dt>
+<dd><p>The function <code>assuan_new_ext</code> creates a new context using the
+supplied <code>libgpg-error</code> error source <var>err_source</var>, the memory
+allocation hooks <var>malloc_hooks</var> and the log handler <var>log_cb</var>
+with the user data <var>log_cb_data</var>.
+</p></dd></dl>
+
+<p>After the context has been used, it can be destroyed again.
+</p>
+<dl>
+<dt><a name="index-assuan_005frelease"></a>Function: <em>void</em> <strong>assuan_release</strong> <em>(assuan_context_t ctx)</em></dt>
+<dd><p>The function <code>assuan_release</code> destroys the context CTX and
+releases all associated resources.
+</p></dd></dl>
+
+<p>Other properties of the context beside the memory allocation handler,
+the log handler, and the <code>libgpg-error</code> source can be set after
+context creation.  Here are some of them:
+</p>
+<dl>
+<dt><a name="index-assuan_005fset_005fpointer"></a>Function: <em>void</em> <strong>assuan_set_pointer</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, void&nbsp;*<var>pointer</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Store the arbitrary pointer value <var>pointer</var> into the context
+<var>ctx</var>.  This is useful to provide command handlers with additional
+application context.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fget_005fpointer"></a>Function: <em>void*</em> <strong>assuan_get_pointer</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd>
+<p>This returns the pointer for context <var>ctx</var> which has been set using
+the above function.  A common way to use it is by setting the pointer
+before starting the processing loop and to retrieve it right at the
+start of a command handler:
+</p><div class="smallexample">
+<pre class="smallexample">static int
+cmd_foo (assuan_context_t ctx, char *line)
+{
+  ctrl_t ctrl = assuan_get_pointer (ctx);
+  ...
+}
+</pre></div>
+</dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fset_005fflag"></a>Function: <em>void</em> <strong>assuan_set_flag</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_flag_t</span>&nbsp;<var>flag</var><!-- /@w -->, int&nbsp;<var>value</var><!-- /@w -->)</em></dt>
+<dd>
+<p>Set the the <var>flag</var> for context <var>ctx</var> to <var>value</var>.  Values for
+flags are usually 1 or 0 but certain flags might need other values.
+</p>
+<dl>
+<dt><a name="index-assuan_005fflag_005ft"></a>Data type: <strong>assuan_flag_t</strong></dt>
+<dd><p>The flags are all named and collected in an <code>enum</code> for better readability.
+Available flags are:
+</p>
+<dl compact="compact">
+<dt><code>ASSUAN_NO_WAITPID</code></dt>
+<dd><p>When using a pipe server, by default Libassuan will wait for the forked
+process to die in <code>assuan_release</code>.  In certain cases this is
+not desirable.  By setting this flag, a call to <code>waitpid</code> will be
+suppressed and the caller is responsible to cleanup the child process.
+</p></dd>
+<dt><code>ASSUAN_CONFIDENTIAL</code></dt>
+<dd><p>Use to return the state of the confidential logging mode.
+</p></dd>
+<dt><code>ASSUAN_NO_FIXSIGNALS</code></dt>
+<dd><p>Do not modify signal handler for <code>SIGPIPE</code>.
+</p></dd>
+<dt><code>ASSUAN_CONVEY_COMMENTS</code></dt>
+<dd><p>If enabled comment lines are passed to the status callback of the
+<code>assuan_transact</code>.
+</p></dd>
+<dt><code>ASSUAN_FORCE_CLOSE</code></dt>
+<dd><p>Setting this flag forces the next command to assume that the
+connection has been closed.  This breaks the command processing loop
+and may be used as an implicit BYE command.  <var>value</var> is ignored
+and thus it is not possible to clear this flag.
+</p></dd>
+</dl>
+</dd></dl>
+</dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fget_005fflag"></a>Function: <em>int</em> <strong>assuan_get_flag</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_flag_t</span>&nbsp;<var>flag</var><!-- /@w -->)</em></dt>
+<dd><p>Return the value of <var>flag</var> in context <var>ctx</var>.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fbegin_005fconfidential"></a>Function: <em>void</em> <strong>assuan_begin_confidential</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd><p>Put the logging feature into confidential mode.  This is to avoid
+logging of sensitive data.
+</p>
+<p>This is identical to:
+</p><div class="smallexample">
+<pre class="smallexample">assuan_set_flag (ctx, ASSUAN_CONFIDENTIAL, 1);
+</pre></div>
+</dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fend_005fconfidential"></a>Function: <em>void</em> <strong>assuan_end_confidential</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->)</em></dt>
+<dd><p>Get the logging feature out of confidential mode.  All data will be
+logged again (if logging is enabled).
+</p>
+<p>This is identical to:
+</p><div class="smallexample">
+<pre class="smallexample">assuan_set_flag (ctx, ASSUAN_CONFIDENTIAL, 0);
+</pre></div>
+</dd></dl>
+
+
+<dl>
+<dt><a name="index-struct-assuan_005fsystem_005fhooks"></a>Data type: <strong>struct assuan_system_hooks</strong></dt>
+<dd><p>This structure is used to store the system callback interface
+functions.  It has the following members, whose semantics are similar
+to the corresponding system functions, but not exactly equivalent.
+</p>
+<dl compact="compact">
+<dt><code>int version</code></dt>
+<dd><p>The user should set this to <code>ASSUAN_SYSTEM_HOOKS_VERSION</code>.  This
+indicates to the library which members of this structure are present
+in case of future extensions.  The user should initialize the whole
+structure with zero bytes.
+</p>
+</dd>
+<dt><code>void (*usleep) (assuan_context_t ctx, unsigned int usec)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to sleep for <code>USEC</code>
+microseconds.
+</p>
+</dd>
+<dt><code>int (*pipe) (assuan_context_t ctx, assuan_fd_t fd[2], int inherit_idx)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to create a pipe.  The
+returned file descriptor <code>fd[inherit_idx]</code> must be inheritable by
+the child process (under Windows, this requires some extra work).
+</p>
+</dd>
+<dt><code>int (*close) (assuan_context_t ctx, assuan_fd_t fd)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to close a file descriptor
+created through the system functions.
+</p>
+</dd>
+<dt><code>ssize_t (*read) (assuan_context_t ctx, assuan_fd_t fd, void *buffer, size_t size)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to read data from a file
+descriptor.  It is functionally equivalent to the system <code>read</code>
+function.
+</p>
+</dd>
+<dt><code>ssize_t (*write) (assuan_context_t ctx, assuan_fd_t fd, const void *buffer, size_t size)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to write data to a file
+descriptor.  It is functionally equivalent to the system <code>write</code>
+function.
+</p>
+</dd>
+<dt><code>int (*recvmsg) (assuan_context_t ctx, assuan_fd_t fd, assuan_msghdr_t msg, int flags)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to receive a message from a
+file descriptor.  It is functionally equivalent to the system
+<code>recvmsg</code> function.
+</p>
+</dd>
+<dt><code>int (*sendmsg) (assuan_context_t ctx, assuan_fd_t fd, const assuan_msghdr_t msg, int flags);</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to send a message to a
+file descriptor.  It is functionally equivalent to the system
+<code>sendmsg</code> function.
+</p>
+</dd>
+<dt><code>int (*spawn) (assuan_context_t ctx, pid_t *r_pid, const char *name, const char **argv, assuan_fd_t fd_in, assuan_fd_t fd_out, assuan_fd_t *fd_child_list, void (*atfork) (void *opaque, int reserved), void *atforkvalue, unsigned int flags)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to spawn a child process.
+The <code>stdin</code> and <code>stdout</code> file descriptors are provided in
+<code>fd_in</code> and <code>fd_out</code> respectively, but can be set to
+<code>ASSUAN_INVALID_FD</code>, in which case they are set to
+<code>/dev/null</code>.  On systems which use <code>fork</code> and <code>exec</code>,
+the <code>atfork</code> function should be called with <code>atforkvalue</code>
+and <code>0</code> for flags in the child process right after <code>fork</code>
+returns.  <code>fd_child_list</code> is a <code>ASSUAN_INVALID_FD</code>
+terminated array (or <code>NULL</code>) and specifies file descriptors to be
+inherited by the child process.
+</p>
+<p>A special situation occurs if <code>name</code> is a null pointer, in which
+case the process should just fork but not call <code>exec</code>.  In this
+case, <code>*argv</code> should be set to <code>&quot;client&quot;</code> in the parent
+process and <code>&quot;server&quot;</code> in the child process.
+</p>
+<p>Flags is the bit-wise OR of some (or none) of the following flags:
+</p>
+<dl compact="compact">
+<dt><code>ASSUAN_SPAWN_DETACHED</code></dt>
+<dd><p>If set and there is a need to start the server it will be started as a
+background process.  This flag is useful under W32 systems, so that no
+new console is created and pops up a console window when starting the
+server.  On W32CE systems this flag is ignored.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>pid_t (*waitpid) (assuan_context_t ctx, pid_t pid, int action, int *status, int options)</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to wait for the spawned
+child process <var>pid</var> to exit, or, if <var>action</var> is 1, to just
+release all resources associated with <var>pid</var> (required on Windows
+platforms).  If <var>action</var> is 0, this is equivalent to <code>waitpid</code>.
+</p>
+</dd>
+<dt><code>int (*socketpair) (assuan_context_t ctx, int namespace, int style, int protocol, assuan_fd_t filedes[2])</code></dt>
+<dd><p>This is the function called by <small>ASSUAN</small> to create a socketpair.  It
+is equivalent to <code>socketpair</code>.
+</p></dd>
+</dl>
+</dd></dl>
+
+
+<dl>
+<dt><a name="index-assuan_005fset_005fsystem_005fhooks"></a>Function: <em>void</em> <strong>assuan_set_system_hooks</strong> <em>(<span class="nolinebreak">assuan_system_hooks_t</span>&nbsp;<var><span class="nolinebreak">system_hooks</span></var><!-- /@w -->)</em></dt>
+<dd><p>Set the default system hooks to use.  There is currently no way to
+reset to the default system hooks.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fsock_005fset_005fsystem_005fhooks"></a>Function: <em>void</em> <strong>assuan_sock_set_system_hooks</strong> <em>(<span class="nolinebreak">assuan_system_hooks_t</span>&nbsp;<var><span class="nolinebreak">system_hooks</span></var><!-- /@w -->)</em></dt>
+<dd><p>The socket subsystem uses an internal context which uses the default
+system hooks.  This function allows to change these system hooks.  The
+function is not thread-safe and only useful if a certain order of
+assuan and assuan socket initializations are required.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fctx_005fset_005fsystem_005fhooks"></a>Function: <em>void</em> <strong>assuan_ctx_set_system_hooks</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">assuan_system_hooks_t</span>&nbsp;<var><span class="nolinebreak">system_hooks</span></var><!-- /@w -->)</em></dt>
+<dd><p>Set the system hooks for context <var>ctx</var>.  There is currently no way
+to reset to the default system hooks, create a new context for that.
+</p></dd></dl>
+
+
+<p>The following system hook collections are defined by the library for
+your convenience:
+</p>
+<dl compact="compact">
+<dt><code>ASSUAN_SYSTEM_NPTH</code></dt>
+<dd><p>System hooks suitable for use with the nPth library.
+</p></dd>
+<dt><code>ASSUAN_SYSTEM_NPTH_IMPL</code></dt>
+<dd><p>The implementation of system hooks for use with the nPth library.
+This must be invoked once somewhere in the application, and defines
+the structure that is referenced by <code>ASSUAN_SYSTEM_NPTH</code>.
+</p></dd>
+<dt><code>ASSUAN_SYSTEM_PTH</code></dt>
+<dd><p>System hooks suitable for use with the GNU Pth library.
+</p></dd>
+<dt><code>ASSUAN_SYSTEM_PTH_IMPL</code></dt>
+<dd><p>The implementation of system hooks for use with the GNU Pth library.
+This must be invoked once somewhere in the application, and defines
+the structure that is referenced by <code>ASSUAN_SYSTEM_PTH</code>.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Reading-and-Writing.html#Reading-and-Writing" accesskey="n" rel="next">Reading and Writing</a>, Previous: <a href="Default-Log-Handler.html#Default-Log-Handler" accesskey="p" rel="prev">Default Log Handler</a>, Up: <a href="Generalities.html#Generalities" accesskey="u" rel="up">Generalities</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

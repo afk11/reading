@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: External I/O Loop Server</title>
+
+<meta name="description" content="Developing with Assuan: External I/O Loop Server">
+<meta name="keywords" content="Developing with Assuan: External I/O Loop Server">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="External-I_002fO-Loop.html#External-I_002fO-Loop" rel="up" title="External I/O Loop">
+<link href="Utilities.html#Utilities" rel="next" title="Utilities">
+<link href="External-I_002fO-Loop-Client.html#External-I_002fO-Loop-Client" rel="prev" title="External I/O Loop Client">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="External-I_002fO-Loop-Server"></a>
+<div class="header">
+<p>
+Previous: <a href="External-I_002fO-Loop-Client.html#External-I_002fO-Loop-Client" accesskey="p" rel="prev">External I/O Loop Client</a>, Up: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="u" rel="up">External I/O Loop</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="External-I_002fO-event-loops-in-the-server_002e"></a>
+<h3 class="section">8.2 External I/O event loops in the server.</h3>
+
+<p>Currently, no Assuan server exists which uses external I/O event
+loops.  However, the following guidelines should lead to a usable
+implementation:
+</p>
+<ol>
+<li> For socket servers: You can not use <code>assuan_accept</code>, so you
+should just implement the bind/connect/listen/accept stage yourself.
+You can register the listen FD with your main event loop, accept the
+connection when it becomes ready, and finally call
+<code>assuan_init_socket_server</code> with the final argument being
+<code>ASSUAN_SOCKET_SERVER_ACCEPTED</code> to create an Assuan context for this
+connection.  This way you can also handle multiple connections in
+parallel.  The reference implementation for this approach is DirMngr.
+
+<p>For pipe servers: <code>assuan_init_pipe_server</code> creates an Assuan
+context valid for the pipe FDs.
+</p>
+</li><li> Once you have a context for a single connection, you can get the
+inbound status FD with <code>assuan_get_active_fds</code> (the first one
+returned is the status FD).  This FD can be duplicated if it is
+convenient.  Every time the inbound status FD is readable, you should
+invoke the function <code>assuan_process_next</code> (see below) to process
+the next incoming message.  <code>assuan_process_next</code> processes as
+many status lines as can be received by a single <code>read</code>
+operation.  When it returns, the inbound status FD may still be
+readable, but Assuan does not check this.
+
+<p>The function <code>assuan_process_next</code> returns 0 if it can not make
+progress reliably, and it returns true in <code>done</code> if the client
+closed the connection.  See below for more information on this
+function.
+</p>
+</li><li> The command will be dispatched by <code>assuan_process_next</code> just as
+with <code>assuan_process</code>, however, you will want to implement the
+command handlers in such a way that they do not block.  For example,
+the command handler may just register the bulk data FDs with the main
+event loop and return.
+
+<p>When the command is finished, irregardless if this happens directly in
+the command handler or later, you must call <code>assuan_process_done</code>
+with an appropriate error value (or 0 for success) to return an
+appropriate status line to the client.  You can do this at the end of
+the command handler, for example by ending it with <code>return
+assuan_process_done (error_code);</code>.  Another possibility is to invoke
+<code>assuan_process_done</code> from the place in the code which closes the
+last active bulk FD registered with the main event loop for this
+operation.
+</p></li></ol>
+
+<p>It is not possible to use <code>assuan_inquire</code> in a command handler,
+as this function blocks on receiving the inquired data from the
+client.  Instead, the asynchronous version <code>assuan_inquire_ext</code>
+needs to be used (see below), which invokes a callback when the client
+provided the inquired data.  A typical usage would be for the command
+handler to register a continuation with <code>assuan_inquire_ext</code> and
+return 0.  Eventually, the continuation would be invoked by
+<code>assuan_process_next</code> when the client data arrived.  The
+continuation could complete the command and eventually call
+<code>assuan_process_done</code>.
+</p>
+<p>Cancellation is supported by returning an appropriate error value to
+the client with <code>assuan_process_done</code>.  For long running
+operations, the server should send progress status messages to the
+client in regular intervals to notice when the client disconnects.
+</p>
+<dl>
+<dt><a name="index-assuan_005fprocess_005fnext"></a>Function: <em>gpg_error_t</em> <strong>assuan_process_next</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, int&nbsp;*<var>done</var><!-- /@w -->)</em></dt>
+<dd><p>This is the same as <code>assuan_process</code> but the caller has to
+provide the outer loop.  He should loop as long as the return code is
+zero and <var>done</var> is false.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005fprocess_005fdone"></a>Function: <em>gpg_error_t</em> <strong>assuan_process_done</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;<var>rc</var><!-- /@w -->)</em></dt>
+<dd><p>Finish a pending command and return the error code <var>rc</var> to the
+client.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-assuan_005finquire_005fext"></a>Function: <em>gpg_error_t</em> <strong>assuan_inquire_ext</strong> <em>(<span class="nolinebreak">assuan_context_t</span>&nbsp;<var>ctx</var><!-- /@w -->, const&nbsp;char&nbsp;*<var>keyword</var><!-- /@w -->, <span class="nolinebreak">size_t</span>&nbsp;<var>maxlen</var><!-- /@w -->, <span class="nolinebreak">gpg_error_t</span>&nbsp;(*<var>cb</var>)&nbsp;(void&nbsp;<span class="nolinebreak">*cb_data,</span>&nbsp;<span class="nolinebreak">gpg_error_t</span>&nbsp;rc,&nbsp;unsigned&nbsp;char&nbsp;*buffer,&nbsp;<span class="nolinebreak">size_t</span>&nbsp;<span class="nolinebreak">buffer_len)</span><!-- /@w -->, void&nbsp;*<var><span class="nolinebreak">cb_data</span></var><!-- /@w -->)</em></dt>
+<dd><p>This is similar to <code>assuan_inquire</code> but the caller has to provide
+the outer loop (using <code>assuan_process_next</code>).  The caller should
+specify a continuation with <var>cb</var>, which receives <var>cb_data</var> as
+its first argument, and the error value as well as the inquired data as
+its remaining arguments.
+</p></dd></dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="External-I_002fO-Loop-Client.html#External-I_002fO-Loop-Client" accesskey="p" rel="prev">External I/O Loop Client</a>, Up: <a href="External-I_002fO-Loop.html#External-I_002fO-Loop" accesskey="u" rel="up">External I/O Loop</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

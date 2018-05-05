@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Header</title>
+
+<meta name="description" content="Developing with Assuan: Header">
+<meta name="keywords" content="Developing with Assuan: Header">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Preparation.html#Preparation" rel="up" title="Preparation">
+<link href="Building-sources.html#Building-sources" rel="next" title="Building sources">
+<link href="Preparation.html#Preparation" rel="prev" title="Preparation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Header"></a>
+<div class="header">
+<p>
+Next: <a href="Building-sources.html#Building-sources" accesskey="n" rel="next">Building sources</a>, Up: <a href="Preparation.html#Preparation" accesskey="u" rel="up">Preparation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Header-1"></a>
+<h3 class="section">4.1 Header</h3>
+
+<p>All interfaces (data types and functions) of <code>libassuan</code> are defined
+in the header file <samp>assuan.h</samp>.  You must include this in all source
+files using the library, either directly or through some other header
+file, like this:
+</p>
+<div class="example">
+<pre class="example">#include &lt;assuan.h&gt;
+</pre></div>
+
+<p>The namespace of <code>libassuan</code> is <code>assuan_*</code> for function
+and type names and <code>ASSUAN*</code> for other symbols.  In addition the
+same name prefixes with one prepended underscore are reserved for
+internal use and should never be used by an application.
+</p>
+<p>Because <code>libassuan</code> makes use of the GPG Error library, using
+<code>libassuan</code> will also use the <code>GPG_ERR_*</code> namespace
+directly, and the <code>gpg_err*</code> and <code>gpg_str*</code> namespaces
+indirectly.
+</p>
+
+
+
+
+</body>
+</html>

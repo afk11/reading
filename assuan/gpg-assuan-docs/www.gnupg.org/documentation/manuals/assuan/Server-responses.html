@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Developing with Assuan: Server responses</title>
+
+<meta name="description" content="Developing with Assuan: Server responses">
+<meta name="keywords" content="Developing with Assuan: Server responses">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index.html#Index" rel="index" title="Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Implementation.html#Implementation" rel="up" title="Implementation">
+<link href="Client-requests.html#Client-requests" rel="next" title="Client requests">
+<link href="Implementation.html#Implementation" rel="prev" title="Implementation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<a name="Server-responses"></a>
+<div class="header">
+<p>
+Next: <a href="Client-requests.html#Client-requests" accesskey="n" rel="next">Client requests</a>, Up: <a href="Implementation.html#Implementation" accesskey="u" rel="up">Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Server-responses-1"></a>
+<h3 class="section">3.1 Server responses</h3>
+
+<dl compact="compact">
+<dt><code>OK  [&lt;arbitrary debugging information&gt;]</code></dt>
+<dd><p>Request was successful.
+</p>
+</dd>
+<dt><code>ERR <var>errorcode</var> [&lt;human readable error description&gt;]</code></dt>
+<dd><p>Request could not be fulfilled.  The possible error codes are defined
+by <code>libgpg-error</code>.
+</p>
+</dd>
+<dt><code>S <var>keyword</var> &lt;status information depending on keyword&gt;</code></dt>
+<dd><p>Informational output by the server, which is still processing the
+request.  A client may not send such lines to the server while
+processing an Inquiry command.  <var>keyword</var> shall start with a
+letter or an underscore.
+</p>
+</dd>
+<dt><code># &lt;string&gt;</code></dt>
+<dd><p>Comment line issued only for debugging purposes.  Totally ignored.
+</p>
+</dd>
+<dt><code>D &lt;raw data&gt;</code></dt>
+<dd><p>Raw data returned to client. There must be exactly one space after the
+&rsquo;D&rsquo;.  The values for &rsquo;%&rsquo;, CR and LF must be percent escaped; these are
+encoded as %25, %0D and %0A, respectively.  Only uppercase letters
+should be used in the hexadecimal representation.  Other characters
+may be percent escaped for easier debugging.  All Data lines are
+considered one data stream up to the OK or ERR response.  Status and
+Inquiry Responses may be mixed with the Data lines.
+</p>
+</dd>
+<dt><code>INQUIRE <var>keyword</var> &lt;parameters&gt;</code></dt>
+<dd><p>The server needs further information from the client.  The client
+should respond with data (using the &ldquo;D&rdquo; command and terminated by
+&ldquo;END&rdquo;).  Alternatively, the client may cancel the current operation
+by responding with &ldquo;CAN&rdquo;.
+</p></dd>
+</dl>
+
+<p>Consider the following examples (lines prefixed with S indicate text
+that the server sends; lines prefixed with C indicate text that the
+client sends):
+</p>
+<div class="example">
+<pre class="example">S: INQUIRE foo
+C: D foo bar
+C: D bar baz
+C: END
+[Server continues normal work]
+</pre></div>
+
+<p>This implements a callback to the client:
+</p>
+<div class="example">
+<pre class="example">S: INQUIRE foo
+C: END
+[Server continues]
+</pre></div>
+
+<p>and:
+</p>
+<div class="example">
+<pre class="example">S: INQUIRE foo
+C: CAN
+[Server terminates the operaion and in most cases returns an ERR to the client.]
+</pre></div>
+
+<p>But, CAN may also mean &ldquo;I have no data for you, try to get it from
+elsewhere.&rdquo;
+</p>
+
+<p>Note: lines longer than 1000 bytes should be treated as a
+communication error.  (The rationale for having a line length limit is
+to allow for easier multiplexing of several channels.)
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Client-requests.html#Client-requests" accesskey="n" rel="next">Client requests</a>, Up: <a href="Implementation.html#Implementation" accesskey="u" rel="up">Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>
